@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "release:manifest": "node scripts/make-update-manifest.mjs",
+    "release:verify": "node scripts/verify-update-signature.mjs",
     "check:dom": "npx --yes esbuild scripts/dom-check.tsx --bundle --platform=node --format=cjs --alias:@=./src --alias:@tauri-apps/plugin-sql=./scripts/stub-tauri.ts --alias:@tauri-apps/plugin-notification=./scripts/stub-tauri.ts --alias:@tauri-apps/api/window=./scripts/stub-tauri.ts --alias:@tauri-apps/api/core=./scripts/stub-tauri.ts --outfile=scripts/dom-check.cjs && node scripts/dom-check.cjs",
     "check:interaction": "npx --yes esbuild scripts/interaction-check.tsx --bundle --platform=node --format=cjs --external:jsdom --alias:@=./src --alias:@tauri-apps/plugin-sql=./scripts/stub-tauri.ts --alias:@tauri-apps/plugin-notification=./scripts/stub-tauri.ts --alias:@tauri-apps/api/window=./scripts/stub-tauri.ts --alias:@tauri-apps/api/core=./scripts/stub-tauri.ts --outfile=scripts/interaction-check.cjs && node scripts/interaction-check.cjs"
   },

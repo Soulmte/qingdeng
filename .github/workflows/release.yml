@@ -90,14 +90,21 @@ jobs:
       - name: 整理 Release 资产
         shell: bash
         run: |
+          set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          mkdir -p release-assets
           nsis="src-tauri/target/release/bundle/nsis"
+          mkdir -p release-assets cdn-assets
+          # 文件名取自 productName（青灯），资产名换成纯英文
           installer=$(ls "$nsis"/*-setup.exe | head -1)
-          # 安装包名取自 productName（青灯），资产名换成纯英文，避免下载地址里出现非 ASCII 字符
-          cp "$installer" "release-assets/QingDeng_${version}_x64-setup.exe"
+          updater=$(ls "$nsis"/*-setup.nsis.zip | head -1)
+          cp "$installer"     "release-assets/QingDeng_${version}_x64-setup.exe"
           cp "$installer.sig" "release-assets/QingDeng_${version}_x64-setup.exe.sig"
-          ls -l release-assets
+          cp "$updater"       "release-assets/QingDeng_${version}_x64-setup.nsis.zip"
+          cp "$updater.sig"   "release-assets/QingDeng_${version}_x64-setup.nsis.zip.sig"
+          # cdn 分支只放 updater bundle：jsDelivr 会拦 .exe，只服务 .zip/.apk/.json
+          cp "$updater"       "cdn-assets/QingDeng_${version}_x64-setup.nsis.zip"
+          cp "$updater.sig"   "cdn-assets/QingDeng_${version}_x64-setup.nsis.zip.sig"
+          ls -l release-assets cdn-assets
 
       - name: 生成 latest.json
         shell: bash
@@ -105,9 +112,57 @@ jobs:
           version="${{ steps.version.outputs.version }}"
           node scripts/make-update-manifest.mjs \
             --repo "${{ github.repository }}" \
-            --asset-name "QingDeng_${version}_x64-setup.exe" \
+            --asset-name "QingDeng_${version}_x64-setup.nsis.zip" \
             --notes-file "${{ steps.notes.outputs.file }}"
+          cp release/latest.json cdn-assets/latest.json
           cp release/latest.json release-assets/latest.json
+
+      # 发布前的闸门：清单里的 signature 必须能验通待上传的更新包。
+      # updater 只认签名，配错了用户会「下载成功但更新无反应」，且只有发出去才会发现。
+      - name: 校验清单签名与更新包配对
+        shell: bash
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          node scripts/verify-update-signature.mjs \
+            --manifest release/latest.json \
+            --artifact "cdn-assets/QingDeng_${version}_x64-setup.nsis.zip"
+
+      # 国内直连 GitHub 下载很慢，所以把更新包再镜像一份到 cdn 分支，
+      # 客户端从 jsDelivr 拉（文件名带版本号，命中永久缓存）。
+      # 用独立的 GIT_DIR，不碰当前工作区。
+      - name: 镜像到 cdn 分支
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          export GIT_DIR="$RUNNER_TEMP/cdn.git" GIT_WORK_TREE="$RUNNER_TEMP/cdnws"
+          mkdir -p "$GIT_WORK_TREE"
+          git init -q
+          cd "$GIT_WORK_TREE"
+          git checkout -q --orphan cdn 2>/dev/null || true
+          cp "$GITHUB_WORKSPACE"/cdn-assets/* .
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Publish v${{ steps.version.outputs.version }} to CDN"
+          git push -q -f \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" cdn
+          ls -l
+
+      # 分支引用在 jsDelivr 上会缓存，发版后主动刷一次，否则最多要等 12 小时
+      - name: 刷新 jsDelivr 缓存
+        shell: bash
+        run: |
+          url="https://purge.jsdelivr.net/gh/${{ github.repository }}@cdn/latest.json"
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 30 "$url" > /dev/null; then
+              echo "缓存已刷新（第 $attempt 次）"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::warning::jsDelivr 缓存刷新失败，清单更新最多延迟 12 小时"
 
       - name: 创建 Release 并上传资产
         uses: softprops/action-gh-release@v2
@@ -185,3 +240,26 @@ jobs:
         with:
           tag_name: v${{ needs.windows.outputs.version }}
           files: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+
+      # APK 不参与自动更新，但平板上要人工下载，同样镜像到 cdn 分支走 jsDelivr。
+      # 这里用 clone 而不是强推，否则会把上面那步写进去的安装包冲掉。
+      - name: 把 APK 也镜像到 cdn 分支
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ needs.windows.outputs.version }}"
+          work="$RUNNER_TEMP/cdnws"
+          rm -rf "$work"
+          git clone -q --depth 1 --branch cdn \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "$work"
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
+            "$work/QingDeng_${version}_arm64.apk"
+          cd "$work"
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Add Android APK for v${version}"
+          git push -q origin cdn
+          echo "APK 已镜像：https://cdn.jsdelivr.net/gh/${{ github.repository }}@cdn/QingDeng_${version}_arm64.apk"

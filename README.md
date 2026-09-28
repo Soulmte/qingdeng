@@ -27,7 +27,7 @@
 | 数据导出 | 一键导出完整备份（JSON）或记录表（CSV，带 BOM，Excel 直接打开不乱码），导出后自动在资源管理器中定位文件 |
 | 自动接续 | 专注与休息首尾相接，阶段结束自动开始下一段，不用每轮重新点开始；可在设置里关掉，改成每段手动开始 |
 | 手动结束本段 | 不必等整轮跑完，随时按「结束本段」把已用时间计入统计再接续下一段；另有「重置」清零当前阶段、「跳过」不计入本段用时 |
-| 应用内更新 | 启动时拉取 CDN 上的 latest.json，有新版本弹窗列出更新内容，确认后下载、签名校验、安装并自动重启；可在设置里手动检查或忽略某个版本 |
+| 应用内更新 | 启动时拉取 `latest.json`，有新版本弹窗列出更新内容，确认后下载、签名校验、安装并自动重启；更新包走 jsDelivr，国内下载不用直连 GitHub；设置页可手动检查或忽略某版本 |
 | 数字输入 | 全部用带加减按钮的步进控件；时长按时 / 分 / 秒三段输入（1 小时 30 分不用自己换算成分钟）；步长取 5 且 `min` 与 `step` 对齐（如每日目标 5 + n×5），避免输入 120 被吸附成 115 |
 | 模板编辑 | 先用「排休息 / 不排休息」两个按钮定下模式，再填具体时长，底部实时生成一句「运行效果」描述 |
 | 界面细节 | 统一的自定义滚动条（随主题换色）、字段边框与暗色填充、全站步进式数字输入、自绘的青灯标识 |
@@ -177,66 +177,89 @@ Android 不装未签名的 APK，所以发布包必须签名。签名材料有�
 `src-tauri/src/lib.rs` 中桌面独有的状态与命令都有 `#[cfg]` 守卫，Android 走 no-op 分支。
 `vite.config.ts` 已按 Tauri 约定读取 `TAURI_DEV_HOST`，真机调试时前端会监听局域网地址。
 
-## 应用内更新（GitHub Releases）
+## 应用内更新（jsDelivr + GitHub Releases）
 
-更新走「GitHub Release 清单 + 签名校验」：应用启动时拉一份 `latest.json`，版本号比本地新就弹窗，
-把清单里的 `notes` 当作「更新内容」展示，用户确认后下载安装包、校验签名、安装并重启。
+更新走「静态清单 + 签名校验」：应用启动时拉一份 `latest.json`，版本号比本地新就弹窗，
+把清单里的 `notes` 当作「更新内容」展示，用户确认后下载更新包、校验签名、安装并重启。
 
 ```mermaid
 graph LR
-    A[启动] --> B[拉 GitHub latest.json]
+    A[启动] --> B[拉 latest.json]
     B -->|无新版 / 网络不通| C[静默跳过]
     B -->|版本更新| D[弹窗展示更新内容]
     D -->|稍后 / 忽略此版本| E[记录忽略的版号]
-    D -->|立即更新| F[下载 + 校验签名]
-    F --> G[安装并重启]
+    D -->|立即更新| F[从 jsDelivr 下载更新包]
+    F --> G[校验签名后安装并重启]
 ```
 
-### 仓库与地址
+### 两个通道，各管一件事
 
-| 项 | 值 |
-| --- | --- |
-| 仓库 | `Soulmte/qingdeng` |
-| 清单地址 | `https://github.com/Soulmte/qingdeng/releases/latest/download/latest.json` |
-| 配置位置 | `src-tauri/tauri.conf.json` 的 `plugins.updater.endpoints` |
+GitHub 在国内直连慢，所以把「清单」和「下载」拆开走两条路：
 
-清单必须放在 Release 资产里（不能当仓库普通文件），`endpoints` 用的是
-`releases/latest/download/...` 这种永远指向最新一版的固定地址。
-GitHub 会把请求重定向到实际存储地址，updater 会跟随重定向。
+| 内容 | 主通道 | 备通道 | 大小 |
+| --- | --- | --- | --- |
+| `latest.json` 清单 | jsDelivr（发版后自动刷新缓存） | GitHub Releases | 2 KB |
+| 更新包 | jsDelivr（文件名带版本号 → 永久缓存） | — | 3.3 MB |
+| 手动安装包 `.exe` / APK | GitHub Releases（APK 另镜像一份到 jsDelivr） | — | 3.2 / 8.4 MB |
 
-### Release 资产约定
-
-每个 Release 固定挂三样东西，清单里的 `url` 指向同一次 Release 的安装包：
-
-```
-v0.2.0
-├── latest.json                        # 客户端拉取的唯一入口
-├── QingDeng_0.2.0_x64-setup.exe       # NSIS 安装包
-└── QingDeng_0.2.0_x64-setup.exe.sig   # 对应的签名
-```
-
-安装包本地构建出来的文件名是 `青灯_0.2.0_x64-setup.exe`（跟着 `productName` 走），
-上传时由流水线重命名成纯英文的 `QingDeng_...`，避免下载地址里出现非 ASCII 字符。
-重命名后 `latest.json` 里的 `url` 必须跟着改，脚本的 `--asset-name` 就是干这个的。
-
-`latest.json` 结构：
+清单很小，就算走 GitHub 也就几十毫秒，所以它主要是「拿得准」；真正慢的是几 MB 的更新包，
+所以更新包的地址直接写成 jsDelivr，客户端下载就绕开了 GitHub。
 
 ```json
-{
-  "version": "0.2.0",
-  "notes": "- 新增启动时检查更新\n- 修复轮次编辑后无法保存",
-  "pubkey": "dW50cnVzdGVk...",
-  "platforms": {
-    "windows-x86_64": {
-      "signature": "<安装包 .sig 文件的完整内容>",
-      "url": "https://github.com/Soulmte/qingdeng/releases/download/v0.2.0/QingDeng_0.2.0_x64-setup.exe"
-    }
-  }
-}
+"endpoints": [
+  "https://cdn.jsdelivr.net/gh/Soulmte/qingdeng@cdn/latest.json",
+  "https://github.com/Soulmte/qingdeng/releases/latest/download/latest.json"
+]
 ```
 
-`plugins.updater.pubkey` 是校验用的公钥，必须与下面这把签名私钥成对；
-换公钥等于换密钥对，老版本将无法验证新包。
+两个都在 `src-tauri/tauri.conf.json` 的 `plugins.updater.endpoints`。
+注意 Tauri 的官方行为：**只有前一个地址返回非 2XX 才会试下一个**，连接超时不会自动回退，
+所以 jsDelivr 放在第一位是为了国内能快速拿到清单。
+
+### 为什么更新包是 `.nsis.zip` 而不是 `.exe`
+
+jsDelivr 会直接 403 拦掉 `.exe`，实测结果：
+
+| 扩展名 | 结果 |
+| --- | --- |
+| `.exe` | 403 Forbidden |
+| `.nsis.zip` / `.zip` | 200 |
+| `.apk` | 200 |
+| `.json` / `.sig` | 200 |
+
+所以 `bundle.createUpdaterArtifacts` 设为 `"v1Compatible"`，Tauri 会额外产出
+`青灯_<版本>_x64-setup.nsis.zip` 作为 updater 包（updater 会自己解包再跑安装程序），
+这个格式能上 jsDelivr。`.exe` 仍然照常产出，只是不参与自动更新。
+
+> 需要注意：`v1Compatible` 是官方标注的迁移用格式，Tauri v3 会移除。
+> 将来若要改用自建 CDN（下面一节），就应该把它改回 `true` 直接分发 `.exe`。
+
+### 换成自己的 CDN
+
+如果你有阿里云 OSS / 腾讯云 COS 这类国内对象存储，就可以彻底不走 jsDelivr：
+
+1. 把 `createUpdaterArtifacts` 改回 `true`（直接分发 `.exe`）
+2. 发版时 `npm run release:manifest -- --asset-base https://<你的域名>/qingdeng`
+3. 把 `latest.json`、`青灯_<版本>_x64-setup.exe` 与其 `.sig` 传到这个目录
+4. `tauri.conf.json` 的 `endpoints` 第一条换成你的 `latest.json` 地址
+
+`--asset-base` 就是为这件事留的开关，其余逻辑都不用动。
+
+### cdn 分支
+
+仓库里的 `cdn` 分支不是代码分支，只放客户端要下载的文件：
+
+```
+cdn
+├── latest.json                            # 清单（发版后 purge 缓存立即生效）
+├── QingDeng_<版本>_x64-setup.nsis.zip     # updater 包
+├── QingDeng_<版本>_x64-setup.nsis.zip.sig # 对应签名
+└── QingDeng_<版本>_arm64.apk              # 平板手动下载
+```
+
+文件名必须和 `latest.json` 里的 `url` 逐字一致，否则 404。
+每个版本的文件名都带版本号，所以旧版本用户去下载时也能命中各自的缓存。
+分支每次发版强推重建，所以它本身只有最新一版的文件。
 
 ### 签名密钥
 
@@ -246,12 +269,21 @@ updater 只接受签名过的包，所以发版必须有私钥：
 - 公钥（已写入配置）：`%USERPROFILE%\.tauri\qingdeng.key.pub`
 
 私钥丢了就无法再发布更新，只能提醒用户重新下载安装。
+换公钥等于换密钥对，老版本将无法验证新包。
 
 ### 自动发布（推荐）
 
 `.github/workflows/release.yml` 已经把整条链路接好了，推一个 `v*` 标签就自动完成：
-打包 → 签名 → 生成 `latest.json` → 建 Release → 挂上安装包、签名与清单。
+打包 → 签名 → 生成 `latest.json` → **校验签名与更新包配对** → 建 Release → 同步 `cdn` 分支 → 刷新 jsDelivr 缓存。
 客户端下次启动就能看到更新弹窗。
+
+那道校验是发布前的闸门：updater 只认签名，一旦清单里的 `signature` 与上传的文件对不上
+（换错文件、传了旧 `.sig`、改了资产名却没改 `url`），用户会「下载成功但更新无反应」，
+而且只有真正发出去才会暴露，所以宁可让流水线在这一步失败。本地可以单独跑：
+
+```bash
+npm run release:verify        # 自动在 bundle 目录里按签名反查配对的文件
+```
 
 ```bash
 # 1. 三处版本号一起改：package.json、src-tauri/tauri.conf.json、src-tauri/Cargo.toml
@@ -296,8 +328,19 @@ npm run tauri build
 npm run release:manifest -- --notes-file docs/release-notes/0.2.0.md
 ```
 
-再把 `release/latest.json`、`青灯_<版本>_x64-setup.exe` 与其 `.sig` 传到同一个 Release。
-脚本会检查签名文件是否存在、更新内容是否为空，缺任何一样都会直接报错退出。
+脚本会打印需要上传的文件清单与目标名；文件名必须逐字照做，因为 `latest.json` 里的 `url`
+已经按那些名字写好。它会先检查签名是否存在、更新内容是否为空，缺任何一样都直接报错退出。
+
+需要上传两处：
+
+- `cdn` 分支：`latest.json` + 更新包与它的 `.sig`（客户端从这里下载）
+- 对应的 Release：手动安装包 `.exe`（供人工下载），可选带上更新包与清单
+
+传完 `cdn` 分支后记得刷一次 jsDelivr 缓存，否则清单最多要等 12 小时：
+
+```bash
+curl "https://purge.jsdelivr.net/gh/Soulmte/qingdeng@cdn/latest.json"
+```
 
 ### 本地试跑
 
@@ -310,7 +353,10 @@ npm run release:manifest -- --notes-file docs/release-notes/0.2.0.md
 
 Android 不允许应用静默覆盖安装自己，所以 `updater` 插件只在桌面端注册，
 Capability 也在 `src-tauri/capabilities/updater.json` 里用 `platforms` 限定为 `windows / macOS / linux`。
-平板上更新走「弹窗提示 + 下载 APK 覆盖安装」，清单里可附带 `android.url` 给出下载地址。
+平板上更新靠下载 APK 覆盖安装：APK 会同时挂到 Release 和 `cdn` 分支（jsDelivr 是放行 `.apk` 的）。
+
+注意 APK 不像 Windows 更新包那样有应用内签名校验（签名由 Android 系统在安装时把关，
+所以覆盖已装应用是安全的，但首次安装时请优先用 Release 里的那份）。
 
 ## 目录结构
 
