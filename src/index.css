@@ -23,6 +23,9 @@
   --ring-track: oklch(0.91 0.012 195);
   --ring-focus: oklch(0.5 0.09 195);
   --ring-break: oklch(0.74 0.14 72);
+  /* 刻度与内圈发丝线：圆环轨道本身很淡，刻度要单独给色，否则浅色下看不见 */
+  --ring-mark: oklch(0.45 0.03 195);
+  --ring-hair: oklch(0.56 0.02 195);
 
   --scrollbar-track: transparent;
   --scrollbar-thumb: oklch(0.86 0.008 195);
@@ -70,6 +73,8 @@
   --ring-track: oklch(0.32 0.022 195);
   --ring-focus: oklch(0.76 0.1 195);
   --ring-break: oklch(0.8 0.13 72);
+  --ring-mark: oklch(0.62 0.03 195);
+  --ring-hair: oklch(0.5 0.025 195);
 
   --scrollbar-track: transparent;
   --scrollbar-thumb: oklch(0.36 0.01 195);
@@ -127,6 +132,8 @@
   --color-ring-track: var(--ring-track);
   --color-ring-focus: var(--ring-focus);
   --color-ring-break: var(--ring-break);
+  --color-ring-mark: var(--ring-mark);
+  --color-ring-hair: var(--ring-hair);
   --color-lamp: var(--lamp);
   --color-lamp-strong: var(--lamp-strong);
   --color-lamp-soft: var(--lamp-soft);

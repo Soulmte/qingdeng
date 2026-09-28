@@ -14,8 +14,13 @@ interface UpdateStore {
   info: UpdateInfo | null;
   open: boolean;
   phase: InstallPhase;
-  /** 下载百分比，服务端没给总大小时为 null，界面退化成不确定进度 */
+  /** 下载百分比；服务端没给总大小时为 null，界面退化成不确定进度 */
   percent: number | null;
+  /** 已下载字节数与总字节数，用来在界面上显示真实数字 */
+  downloaded: number;
+  total: number | null;
+  /** 下载速度（字节/秒），两次采样算出并做平滑 */
+  speed: number;
   message: string | null;
   /** 「已经是最新版本」这类给手动检查看的反馈 */
   notice: string | null;
@@ -35,6 +40,9 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
   open: false,
   phase: "idle",
   percent: null,
+  downloaded: 0,
+  total: null,
+  speed: 0,
   message: null,
   notice: null,
   checking: false,
@@ -76,6 +84,9 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
         open: !auto || found.info.version !== skipped,
         phase: "idle",
         percent: null,
+        downloaded: 0,
+        total: null,
+        speed: 0,
         message: null,
       });
     } catch (error) {
@@ -91,20 +102,51 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
   install: async () => {
     if (!pending) return;
 
-    set({ phase: "downloading", percent: null, message: null });
+    set({
+      phase: "downloading",
+      percent: null,
+      downloaded: 0,
+      total: null,
+      speed: 0,
+      message: null,
+    });
+
+    // 速度用两次采样算，再做指数平滑，否则数字会来回跳
+    let lastBytes = 0;
+    let lastAt = Date.now();
+    let smoothed = 0;
 
     try {
       await pending.install(({ downloaded, total }) => {
+        const now = Date.now();
+        const elapsed = now - lastAt;
+        if (elapsed >= 250) {
+          const rate = ((downloaded - lastBytes) / elapsed) * 1000;
+          smoothed = smoothed === 0 ? rate : smoothed * 0.6 + rate * 0.4;
+          lastBytes = downloaded;
+          lastAt = now;
+        }
+
         set({
           phase: "downloading",
-          percent: total && total > 0 ? Math.round((downloaded / total) * 100) : null,
+          downloaded,
+          total,
+          speed: smoothed,
+          percent:
+            total !== null && total > 0
+              ? Math.min(100, Math.round((downloaded / total) * 100))
+              : null,
         });
       });
-      set({ phase: "installing", percent: 100 });
+      set({ phase: "installing", percent: 100, speed: 0 });
       // 装完必须重启，否则用户还在跑旧版本
       await relaunchApp();
     } catch (error) {
-      set({ phase: "error", message: error instanceof Error ? error.message : String(error) });
+      set({
+        phase: "error",
+        speed: 0,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 

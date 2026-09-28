@@ -70,14 +70,47 @@ export async function relaunchApp() {
   await relaunch();
 }
 
-/** 把 CDN 清单里的 notes 拆成可读的行，支持 "- " 开头的列表项 */
-export function parseNotes(notes: string) {
+/** 把字节数写成人能看的单位，用于下载进度与速度 */
+export function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * 把 CDN 清单里的 notes 拆成可读的行。
+ *
+ * 发布说明同时要当 Release 正文用，所以带着 Markdown 结构：
+ *   - `# xxx` 是整篇文档的标题，弹窗自己已经有标题了，丢掉不显示
+ *   - `## xxx` 当作小节标题，去掉井号后用强调样式展示
+ *   - `- xxx` 当作列表项
+ */
+export interface UpdateNoteLine {
+  /** 列表项，前面带一个圆点 */
+  bullet: boolean;
+  /** 小节标题，用强调样式展示 */
+  heading: boolean;
+  text: string;
+}
+
+export function parseNotes(notes: string): UpdateNoteLine[] {
   return notes
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
+    // 一级标题是文档题目，和弹窗标题重复
+    .filter((line) => !/^#\s+/.test(line))
     .map((line) => {
+      const heading = /^#{2,6}\s+/.test(line);
+      if (heading) {
+        return { bullet: false, heading: true, text: line.replace(/^#{2,6}\s+/, "") };
+      }
       const bullet = /^[-*·]\s+/.test(line);
-      return { bullet, text: bullet ? line.replace(/^[-*·]\s+/, "") : line };
+      return {
+        bullet,
+        heading: false,
+        text: bullet ? line.replace(/^[-*·]\s+/, "") : line,
+      };
     });
 }

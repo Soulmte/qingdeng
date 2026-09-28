@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- 自适应图标的前景：只画灯本身，不带底square，
+       交给系统按启动器的形状裁切。灯在画布中央，高度约占 53%，
+       落在 108dp 画布的安全区（约 66%）之内，裁成圆形或圆角都不会切到灯。 -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="34%" r="50%">
+      <stop offset="0%" stop-color="#eaa23c" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#eaa23c" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#eaa23c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#eaa23c"/>
+      <stop offset="100%" stop-color="#ffe0ab"/>
+    </linearGradient>
+    <linearGradient id="body" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#35807f"/>
+      <stop offset="100%" stop-color="#1f5d5c"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(115 115) scale(6.2)">
+    <circle cx="64" cy="44" r="42" fill="url(#glow)"/>
+    <circle cx="64" cy="46" r="33" fill="none" stroke="#eaa23c" stroke-width="1.4" opacity="0.2"/>
+
+    <path d="M64 20c7.2 11.6 11.8 20 11.8 27.2 0 7-5.3 12.2-11.8 12.2s-11.8-5.2-11.8-12.2C52.2 40 56.8 31.6 64 20Z" fill="url(#flame)"/>
+    <path d="M64 32.5c3.5 5.7 5.7 9.8 5.7 13.3 0 3.4-2.5 6-5.7 6s-5.7-2.6-5.7-6c0-3.5 2.2-7.6 5.7-13.3Z" fill="#ffe0ab"/>
+    <path d="M64 56.5v8" stroke="#eaa23c" stroke-width="2.6" stroke-linecap="round"/>
+
+    <path d="M30 70c0 10.6 15.2 19 34 19s34-8.4 34-19Z" fill="url(#body)"/>
+    <ellipse cx="64" cy="70" rx="34" ry="6.4" fill="#1f5d5c" opacity="0.92"/>
+    <path d="M30 70c0 3.6 15.2 6.6 34 6.6s34-3 34-6.6" fill="none" stroke="#35807f" stroke-width="1.6" opacity="0.55"/>
+
+    <path d="M59.5 88.5h9v5.5h-9z" fill="#1f5d5c"/>
+    <path d="M53 94h22l4.5 7.5h-31z" fill="url(#body)"/>
+    <rect x="43" y="101.5" width="42" height="5.5" rx="2.75" fill="#1f5d5c"/>
+  </g>
+</svg>

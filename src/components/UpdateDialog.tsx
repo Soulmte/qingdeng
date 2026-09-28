@@ -1,7 +1,7 @@
-import { Button } from "@heroui/react";
+import { Button, ProgressBar } from "@heroui/react";
 import { Download, RefreshCw } from "lucide-react";
 import { Dialog } from "@/components/ui/Dialog";
-import { parseNotes } from "@/lib/updater";
+import { formatBytes, parseNotes } from "@/lib/updater";
 import { useUpdateStore } from "@/stores/updateStore";
 
 /**
@@ -13,6 +13,9 @@ export function UpdateDialog() {
   const info = useUpdateStore((state) => state.info);
   const phase = useUpdateStore((state) => state.phase);
   const percent = useUpdateStore((state) => state.percent);
+  const downloaded = useUpdateStore((state) => state.downloaded);
+  const total = useUpdateStore((state) => state.total);
+  const speed = useUpdateStore((state) => state.speed);
   const message = useUpdateStore((state) => state.message);
   const install = useUpdateStore((state) => state.install);
   const close = useUpdateStore((state) => state.close);
@@ -23,11 +26,24 @@ export function UpdateDialog() {
   const busy = phase === "downloading" || phase === "installing";
   const notes = parseNotes(info.notes);
 
+  // 只有拿到总长度才是确定进度；拿不到就让进度条自己跑，别假装知道百分比
+  const determinate = phase !== "downloading" || percent !== null;
+  const progressValue =
+    phase === "downloading" ? (percent ?? 0) : phase === "installing" ? 100 : 0;
+
+  const progressLabel =
+    phase === "downloading"
+      ? "正在下载更新"
+      : phase === "installing"
+        ? "下载完成，正在安装"
+        : "更新失败";
+
   return (
     <Dialog
       open={open}
       // 下载过程中不允许关掉，避免状态和实际安装对不上
       onClose={busy ? () => undefined : close}
+      className="max-w-2xl"
       title={`发现新版本 ${info.version}`}
       description={`当前版本 ${info.currentVersion}${
         info.date ? ` · 发布于 ${info.date.slice(0, 10)}` : ""
@@ -64,45 +80,69 @@ export function UpdateDialog() {
         {notes.length === 0 ? (
           <p className="text-sm text-muted">这次更新没有附说明。</p>
         ) : (
-          <ul className="flex flex-col gap-1.5">
-            {notes.map((line, index) => (
-              <li
-                key={`${index}-${line.text}`}
-                className="flex gap-2 text-sm leading-relaxed text-muted"
-              >
-                <span
-                  aria-hidden
-                  className={`mt-2 size-1 shrink-0 rounded-full ${
-                    line.bullet ? "bg-accent" : "bg-transparent"
-                  }`}
-                />
-                <span>{line.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col gap-1.5">
+            {notes.map((line, index) =>
+              line.heading ? (
+                <h4
+                  key={`${index}-${line.text}`}
+                  className="mt-2 text-sm font-medium text-foreground first:mt-0"
+                >
+                  {line.text}
+                </h4>
+              ) : (
+                <div
+                  key={`${index}-${line.text}`}
+                  className="flex gap-2 text-sm leading-relaxed text-muted"
+                >
+                  <span
+                    aria-hidden
+                    className={`mt-2 size-1 shrink-0 rounded-full ${
+                      line.bullet ? "bg-accent" : "bg-transparent"
+                    }`}
+                  />
+                  <span>{line.text}</span>
+                </div>
+              ),
+            )}
+          </div>
         )}
       </section>
 
       {busy || phase === "error" ? (
-        <section className="flex flex-col gap-2 rounded-field bg-default p-3.5">
+        <section className="flex flex-col gap-3 rounded-field bg-default p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm text-foreground">{progressLabel}</span>
+            {phase === "downloading" && percent !== null ? (
+              <span className="clock-digits text-sm font-semibold text-accent">{percent}%</span>
+            ) : null}
+          </div>
+
+          <ProgressBar
+            aria-label={progressLabel}
+            color="accent"
+            value={determinate ? progressValue : undefined}
+            isIndeterminate={!determinate}
+          >
+            <ProgressBar.Track>
+              <ProgressBar.Fill />
+            </ProgressBar.Track>
+          </ProgressBar>
+
           <div className="flex items-center justify-between gap-3 text-xs text-muted">
-            <span>
-              {phase === "downloading"
-                ? percent === null
-                  ? "正在下载更新"
-                  : `正在下载更新 ${percent}%`
-                : phase === "installing"
-                  ? "下载完成，正在安装"
-                  : "更新失败"}
+            <span className="clock-digits">
+              {phase === "error"
+                ? "已中断"
+                : total !== null
+                  ? `${formatBytes(downloaded)} / ${formatBytes(total)}`
+                  : phase === "installing"
+                    ? "安装包已下载完成"
+                    : `已下载 ${formatBytes(downloaded)}`}
             </span>
-            <span className="clock-digits">{percent === null ? "" : `${percent}%`}</span>
+            {phase === "downloading" && speed > 0 ? (
+              <span className="clock-digits">{formatBytes(speed)}/s</span>
+            ) : null}
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-ring-track">
-            <div
-              className="h-full rounded-full bg-accent transition-[width] duration-200 ease-linear"
-              style={{ width: `${phase === "downloading" ? (percent ?? 15) : 100}%` }}
-            />
-          </div>
+
           {phase === "error" && message ? (
             <p className="text-xs text-danger">{message}</p>
           ) : null}

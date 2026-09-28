@@ -11,6 +11,7 @@ import { createRoot } from "react-dom/client";
 import { PresetEditorDialog } from "@/components/timer/PresetEditorDialog";
 import { UpdateDialog } from "@/components/UpdateDialog";
 import { BUILTIN_PRESETS } from "@/lib/presets";
+import { formatBytes } from "@/lib/updater";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { useUpdateStore } from "@/stores/updateStore";
@@ -223,16 +224,18 @@ async function main() {
 
   // ── 更新弹窗：内容来自 CDN 清单 ──────────────────────────
   // 注意：zustand 在 SSR 下读的是初始状态，所以弹窗只能在这里用客户端渲染验证
-  useUpdateStore.setState({
-    currentVersion: "0.1.0",
-    open: true,
-    phase: "idle",
-    info: {
-      version: "0.2.0",
+  await act(async () => {
+    useUpdateStore.setState({
       currentVersion: "0.1.0",
-      notes: "- 修复轮次编辑后无法保存\n- 新增启动时检查更新",
-      date: "2026-09-28T09:00:00Z",
-    },
+      open: true,
+      phase: "idle",
+      info: {
+        version: "0.2.0",
+        currentVersion: "0.1.0",
+        notes: "# 青灯 v0.2.1\n\n## 改进\n\n- 修复轮次编辑后无法保存\n- 新增启动时检查更新",
+        date: "2026-09-28T09:00:00Z",
+      },
+    });
   });
 
   await act(async () => {
@@ -255,6 +258,85 @@ async function main() {
       dialogText.includes("立即更新"),
     `立即更新=${dialogText.includes("立即更新")}`,
   );
+
+  // 发布说明带 Markdown 结构，弹窗里不能露出井号
+  const headings = Array.from(scope.querySelectorAll("h4")).map((node) => node.textContent);
+  record(
+    "更新弹窗把说明里的小节标题当标题渲染",
+    headings.includes("改进") && !dialogText.includes("#"),
+    `小节=${headings.join("/")} 井号=${dialogText.includes("#")}`,
+  );
+
+  // 更新说明长短不一，面板得比默认的 max-w-md 宽一档，长句才不会挤成窄柱
+  const dialogPanel = scope.querySelector('[role="dialog"]');
+  record(
+    "更新弹窗面板覆盖默认宽度到 max-w-2xl",
+    Boolean(dialogPanel?.className.includes("max-w-2xl")) &&
+      !dialogPanel?.className.includes("max-w-md"),
+    `面板类=${dialogPanel?.className ?? "未找到"}`,
+  );
+
+  // 下载中：进度条要落在真实百分比上，旁边配真实字节数与速度
+  await act(async () => {
+    useUpdateStore.setState({
+      open: true,
+      phase: "downloading",
+      downloaded: 3 * 1024 * 1024,
+      total: 12 * 1024 * 1024,
+      percent: 25,
+      speed: 512 * 1024,
+      message: null,
+    });
+  });
+  await act(async () => {
+    root.render(<UpdateDialog />);
+  });
+
+  const fill = scope.querySelector<HTMLElement>('[data-slot="progress-bar-fill"]');
+  record(
+    "进度条填充宽度等于真实百分比",
+    fill?.style.width === "25%",
+    `宽度=${fill?.style.width ?? "未找到"}`,
+  );
+
+  const downloadText = text().replace(/\s+/g, "");
+  record(
+    "下载中显示已下载/总大小与速度",
+    downloadText.includes("3.0MB/12.0MB") &&
+      downloadText.includes("512KB/s") &&
+      downloadText.includes("25%"),
+    `字节=${downloadText.includes("3.0MB/12.0MB")} 速度=${downloadText.includes("512KB/s")} 百分比=${downloadText.includes("25%")}`,
+  );
+
+  // 拿不到总大小时不能假装有百分比，进度条要退化成来回跑的不确定态
+  await act(async () => {
+    useUpdateStore.setState({ total: null, percent: null, downloaded: 1024 * 1024 });
+  });
+  await act(async () => {
+    root.render(<UpdateDialog />);
+  });
+  const looseFill = scope.querySelector<HTMLElement>('[data-slot="progress-bar-fill"]');
+  record(
+    "缺少总大小时进度条退化成不确定态",
+    !looseFill?.style.width && text().includes("已下载 1.0 MB"),
+    `宽度=${looseFill?.style.width ?? "none"}`,
+  );
+
+  record(
+    "字节数格式化覆盖 B / KB / MB",
+    formatBytes(0) === "0 B" &&
+      formatBytes(900) === "900 B" &&
+      formatBytes(1536) === "2 KB" &&
+      formatBytes(3 * 1024 * 1024) === "3.0 MB",
+    `${formatBytes(900)} ${formatBytes(1536)} ${formatBytes(3 * 1024 * 1024)}`,
+  );
+
+  await act(async () => {
+    useUpdateStore.setState({ phase: "idle", total: null, percent: null, downloaded: 0 });
+  });
+  await act(async () => {
+    root.render(<UpdateDialog />);
+  });
 
   await press(findButton("忽略此版本"));
   record(

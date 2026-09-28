@@ -82,6 +82,28 @@ const rings = {
       running={false}
     />,
   ),
+  /** 25% 进度：光点该落在右侧水平位置 */
+  quarter: renderToStaticMarkup(
+    <RingClock
+      ms={25 * 60 * 1000}
+      progress={0.25}
+      label="专注"
+      tone="focus"
+      countup={false}
+      running
+    />,
+  ),
+  /** 0 进度：弧长为零，不该留一个孤零零的光点 */
+  empty: renderToStaticMarkup(
+    <RingClock
+      ms={25 * 60 * 1000}
+      progress={0}
+      label="专注"
+      tone="focus"
+      countup={false}
+      running={false}
+    />,
+  ),
 };
 
 console.log(
@@ -165,6 +187,30 @@ writeFileSync("scripts/out-stats.html", statsHtml);
 writeFileSync("scripts/out-tasks.html", tasksHtml);
 
 const count = (haystack: string, needle: string) => haystack.split(needle).length - 1;
+
+/** 抠出渲染结果里某个属性的全部取值，用来校验画出来的几何数值 */
+const attrValues = (html: string, name: string) =>
+  Array.from(html.matchAll(new RegExp(`(?:^|\\s)${name}="([^"]*)"`, "g"))).map(
+    (match) => match[1],
+  );
+const num = (value: string | undefined) =>
+  value === undefined ? Number.NaN : Number.parseFloat(value);
+
+// 圆环钟的几何：刻度、渐变弧、弧头光点都靠算出来的坐标，这里把坐标验一遍
+const tickAngles = attrValues(rings.quarter, "transform").map((value) =>
+  num(/rotate\(([-\d.]+)/.exec(value)?.[1]),
+);
+const quarterRadii = attrValues(rings.quarter, "r").map(num);
+const emptyRadii = attrValues(rings.empty, "r").map(num);
+// 进度弧的 dasharray 就是整圈周长，反推半径后可以验光点有没有落在环上
+const circumference = num(attrValues(rings.quarter, "stroke-dasharray")[0]);
+const ringRadius = circumference / (2 * Math.PI);
+const dashOffset = num(attrValues(rings.quarter, "stroke-dashoffset")[0]);
+const gradientId = attrValues(rings.quarter, "id")[0];
+// 两个光点圆是最后画的两个，半径明显小于基准圆
+const beadRadii = quarterRadii.slice(-2);
+const beadCx = num(attrValues(rings.quarter, "cx").at(-1));
+const beadCy = num(attrValues(rings.quarter, "cy").at(-1));
 
 /** 去掉标签后的纯文本，便于断言被标签拆开的文案（如 0 与 /120 分钟） */
 const textOf = (html: string) => html.replace(/<[^>]*>/g, "");
@@ -341,6 +387,41 @@ const checks: [string, boolean, string][] = [
     `max-w=${rings.short.includes("max-w-[min(520px,46vh)]")}`,
   ],
   [
+    "圆环画满 60 格刻度并按 6° 均分",
+    tickAngles.length === 60 &&
+      tickAngles.every((angle, index) => angle === index * 6 && angle < 360),
+    `刻度数=${tickAngles.length}`,
+  ],
+  [
+    "进度弧改用渐变描边",
+    Boolean(gradientId) &&
+      rings.quarter.includes(`url(#${gradientId})`) &&
+      attrValues(rings.quarter, "stop-opacity").join(",") === "0.72,1",
+    `渐变=${gradientId ?? "无"} 端点=${attrValues(rings.quarter, "stop-opacity").join("/")}`,
+  ],
+  [
+    "进度弧的虚线偏移对应实际进度",
+    // 25% 进度剩四分之三圈没画，容差给一位小数
+    Math.abs(dashOffset - circumference * 0.75) < 0.5 &&
+      Math.abs(ringRadius - 117) < 0.1,
+    `周长=${circumference.toFixed(2)} 偏移=${dashOffset.toFixed(2)} 半径=${ringRadius.toFixed(2)}`,
+  ],
+  [
+    "弧头光点落在进度弧末端",
+    // 25% 时角度是 90°，所以横坐标回到圆心、纵坐标正好压在环上
+    beadRadii.length === 2 &&
+      beadRadii.every((radius) => radius > 2 && radius < 10) &&
+      Math.abs(beadCx - 150) < 0.5 &&
+      Math.abs(beadCy - (150 + ringRadius)) < 0.5,
+    `光点=(${beadCx.toFixed(2)},${beadCy.toFixed(2)}) 半径=${beadRadii.map((r) => r.toFixed(2)).join("/")}`,
+  ],
+  [
+    "进度为零时不留下孤立的光点",
+    // 零进度只比有进度少那两个光点圆
+    emptyRadii.length === quarterRadii.length - 2,
+    `零进度圆数=${emptyRadii.length} 25% 圆数=${quarterRadii.length}`,
+  ],
+  [
     "模板弹窗包含模板与快速开始两栏",
     dialogHtml.includes("模板与时长") &&
       dialogHtml.includes("计时模板") &&
@@ -436,6 +517,15 @@ const checks: [string, boolean, string][] = [
       parseNotes("- 第一条")[0].bullet === true &&
       parseNotes("普通一行")[0].bullet === false,
     JSON.stringify(parseNotes("- 甲\n乙")),
+  ],
+  [
+    "更新说明里的标题不会显示成井号",
+    // 发布说明同时当 Release 正文用，一级标题丢掉，二级标题当小节
+    parseNotes("# 青灯 v0.2.1\n\n## 改进\n\n- 一条").length === 2 &&
+      parseNotes("## 改进")[0].heading === true &&
+      parseNotes("## 改进")[0].text === "改进" &&
+      parseNotes("- 一条")[0].heading === false,
+    JSON.stringify(parseNotes("# 青灯 v0.2.1\n## 改进")),
   ],
   [
     "设置页不再出现毕业设计字样",
