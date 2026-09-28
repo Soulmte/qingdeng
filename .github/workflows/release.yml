@@ -229,8 +229,11 @@ jobs:
           fi
           echo "使用 $sdkmanager"
           yes | "$sdkmanager" --licenses > /dev/null 2>&1 || true
-          yes | "$sdkmanager" --install \
-            "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.0.12077973"
+          # 不要再接 `yes |`：sdkmanager 退出后 yes 会继续写、吃到 SIGPIPE，
+          # 在 set -o pipefail 下整步会被判失败（实测报 yes: standard output: Broken pipe）。
+          # 许可上一步已经接受，这里给它 /dev/null 当标准输入，真要交互询问会直接报错而不是挂住。
+          "$sdkmanager" --install \
+            "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.0.12077973" < /dev/null
           echo "NDK_HOME=$sdk_root/ndk/27.0.12077973" >> "$GITHUB_ENV"
           echo "ANDROID_HOME=$sdk_root" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$sdk_root" >> "$GITHUB_ENV"
@@ -276,7 +279,8 @@ jobs:
             echo "::error::找不到 apksigner，无法确认 APK 签名"
             exit 1
           fi
-          "$apksigner" verify --print-certs "$apk" | head -3
+          # 不要接 `| head`：head 提前退出会让 apksigner 吃 SIGPIPE，pipefail 下会误判失败
+          "$apksigner" verify --print-certs "$apk"
 
       - name: 整理 APK 名称
         shell: bash
