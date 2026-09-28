@@ -1,6 +1,6 @@
 [package]
 name = "qingdeng"
-version = "0.1.0"
+version = "0.2.0"
 description = "青灯：桌面专注计时与学习记录工具"
 authors = ["qingdeng"]
 edition = "2021"
