@@ -1,0 +1,12 @@
+{
+  "version": "0.2.1",
+  "notes": "# 青灯 v0.2.1\r\n\r\n这一版把更新提示和圆环钟重新做了一遍，并修好了安卓平板上的桌面图标。\r\n\r\n## 改进\r\n\r\n- 更新提示弹窗加宽，更新说明按小节和条目分行，不再挤成一条窄柱\r\n- 下载更新时显示真实进度：已下载 / 总大小、百分比和当前速度；拿不到总大小时改为来回滚动的提示条\r\n- 圆环钟重新设计：外圈排上 60 格刻度并收一条细表壳线，进度弧改用渐变，弧头带一个跟着走的光点\r\n- 刻度与内圈细线改用单独的颜色，浅色主题下也能看清\r\n\r\n## 修复\r\n\r\n- 修复安卓平板上桌面图标显示为默认图标的问题，现在与桌面端是同一盏青灯\r\n\r\n## 保持不变\r\n\r\n- 三种时钟形态、五种内置模板、任务清单、统计与导出都和 0.2.0 一样\r\n- 专注与休息自动接续、随时「结束本段」并计入用时，也都没变\r\n\r\n## 已知问题\r\n\r\n- 数据还不能导入，换设备可以先用「导出完整备份」留档\r\n- Android 版不支持应用内更新，需要下载安装包覆盖安装",
+  "pub_date": "2026-09-28T08:08:36.920Z",
+  "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ2RTE3QjVCRTRBMEYwMTIKUldRUzhLRGtXM3ZoUm1MWVR5ZnI1ZjFtVXpSTS9nUXUxcWtXR29uUkRGdEUzSFNMV1hWcnJ5bFEK",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUzhLRGtXM3ZoUnZvSmtaczNpSkY0THpOcFVTY3hYbTZxd2xjSG5lZVZHbzU1NjRCdVhpL3BBRVFwR00wQ0M0aW5Qd0h0TU8wdjc4S0pLMTd2L0tQTGhDMFptOGx3RVFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNTgyOTE2CWZpbGU66Z2S54GvXzAuMi4xX3g2NC1zZXR1cC5uc2lzLnppcAl2ZXJzaW9uOjAuMi4xCjZRRjkrNWhLRlNiL1ZuQXJiLzd4a0dWdDZqVXdZWkxnSjdiSHFNZU5QTmlmYndEVCtMZWFHQUQ1UXViTnc1ZzdlclhWanl2YkxQbmZRSDdLWmY0Y0RBPT0K",
+      "url": "https://cdn.jsdelivr.net/gh/Soulmte/qingdeng@cdn/QingDeng_0.2.1_x64-setup.nsis.zip"
+    }
+  }
+}
