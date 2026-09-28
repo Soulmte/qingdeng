@@ -263,3 +263,19 @@ jobs:
               commit -q -m "Add Android APK for v${version}"
           git push -q origin cdn
           echo "APK 已镜像：https://cdn.jsdelivr.net/gh/${{ github.repository }}@cdn/QingDeng_${version}_arm64.apk"
+
+      # 同文件名重新发布会撞上下载缓存（实测会继续发旧包），所以也刷一次。
+      # 正常发版文件名带版本号、不会重发，这里是兼底。
+      - name: 刷新 jsDelivr 缓存（APK）
+        shell: bash
+        run: |
+          version="${{ needs.windows.outputs.version }}"
+          url="https://purge.jsdelivr.net/gh/${{ github.repository }}@cdn/QingDeng_${version}_arm64.apk"
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 30 "$url" > /dev/null; then
+              echo "APK 缓存已刷新（第 $attempt 次）"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::warning::APK 缓存刷新失败，旧包可能还会被缓存一段时间"
