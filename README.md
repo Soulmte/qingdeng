@@ -104,15 +104,68 @@ npm run tauri build    # 打包安装程序，产物在 src-tauri/target/release
 
 导出目录在 Android 上是应用私有目录 `/data/data/com.qingdeng.app/files/exports`，设置页会按平台换文案。
 
-### 构建
+### 本地环境
 
-前置：JDK 17+、Android Studio（安装 SDK 与 NDK），并设置 `ANDROID_HOME`、`NDK_HOME`。
+工具链与项目代码分开放，重装项目或清 `target` 都不会动到几个 GB 的 SDK：
+
+| 项 | 位置 |
+| --- | --- |
+| JDK | `D:\enviroment\jdk-21.0.1\jdk-21.0.1`（已设 `JAVA_HOME`） |
+| Android SDK | `D:\enviroment\android-sdk`（已设 `ANDROID_HOME` / `ANDROID_SDK_ROOT`） |
+| Android NDK | `D:\enviroment\android-sdk\ndk\27.0.12077973`（已设 `NDK_HOME`） |
+| 发布密钥库 | `%USERPROFILE%\.tauri\qingdeng-android.keystore`（不进仓库） |
+
+SDK 里已装：`cmdline-tools;latest`、`platform-tools`、`platforms;android-37.0`、`build-tools;37.0.0`、`ndk;27.0.12077973`。
+注意 Android 现在用次版本号命名平台包，所以是 `android-37.0` 而不是 `android-37`。
+
+环境变量由一个脚本写入（可重复执行，不会重复追加 PATH）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-android-env.ps1
+```
+
+### Windows 上必须先开开发者模式
+
+`tauri android build` 不会把 Rust 产出的 `.so` 拷进 `jniLibs`，而是建一个符号链接；
+Windows 只有在开发者模式打开时才允许普通进程建链接，否则报：
+
+```
+failed to create a symbolic link ... Creation symbolic link is not allowed for this system
+```
+
+开启需要管理员权限，所以单独拆了一个脚本（会弹 UAC）：
+
+```powershell
+powershell -Command "Start-Process powershell -Verb RunAs -ArgumentList '-ExecutionPolicy','Bypass','-File','scripts\enable-dev-mode.ps1'"
+```
+
+### 构建
 
 ```bash
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-npm run tauri android init      # 生成 src-tauri/gen/android 工程
+npm run tauri android init      # 生成 src-tauri/gen/android 工程（已提交，重跑不会覆盖 Gradle 修改）
 npm run tauri android dev       # 连上平板真机或模拟器调试
-npm run tauri android build     # 产出 APK：gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+npm run tauri android build -- --apk --target aarch64   # 只出 arm64 的 APK，快得多
+npm run tauri android build -- --apk                    # 四种 ABI 都打，体积大、编译久
+```
+
+产物在 `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`。
+
+### 签名
+
+Android 不装未签名的 APK，所以发布包必须签名。签名材料有两处，都不会进仓库：
+
+- 密钥库：`%USERPROFILE%\.tauri\qingdeng-android.keystore`
+- 配置：`src-tauri/gen/android/keystore.properties`（写库路径、别名与口令）
+
+`app/build.gradle.kts` 里有签名配置：有 `keystore.properties` 就用它，
+没有就退回读 `ANDROID_KEYSTORE_PATH` 等环境变量（CI 用），两者都没有则产出未签名 APK。
+空字符串也会当成未配置，避免 CI 传了空 secret 就拼出一个非法路径。
+
+校验签名：
+
+```bash
+"$ANDROID_HOME/build-tools/37.0.0/apksigner.bat" verify --print-certs <apk>
 ```
 
 安装后桌面上的名字取自 `tauri.conf.json` 的 `productName`，现在是「青灯」，
@@ -215,8 +268,19 @@ git push origin main --tags
 | --- | --- |
 | `TAURI_SIGNING_PRIVATE_KEY` | `%USERPROFILE%\.tauri\qingdeng.key` 文件里的完整内容 |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 生成密钥时设的口令；生成时留空就也留空 |
+| `ANDROID_KEYSTORE_BASE64` | 密钥库 base64 后的内容（见下） |
+| `ANDROID_KEYSTORE_PASSWORD` | 密钥库口令 |
+| `ANDROID_KEY_ALIAS` | 密钥别名，当前是 `qingdeng` |
+| `ANDROID_KEY_PASSWORD` | 密钥口令 |
 
 少了 `TAURI_SIGNING_PRIVATE_KEY` 流水线会直接失败，而不是发出去一个 updater 不认的包。
+Android 那四项可以不配：没有时 APK 会构建成未签名包，只能用来验证构建能不能过。
+
+密钥库是二进制，只能 base64 后放进 Secret：
+
+```bash
+base64 -w0 "%USERPROFILE%/.tauri/qingdeng-android.keystore" > keystore.b64   # 或 certutil -encode
+```
 
 Android 作业跟在 Windows 之后，把 APK 挂到同一个 Release。它不参与自动更新，
 只作为下载入口（平板上更新靠下载 APK 覆盖安装）；即使 Android 作业失败，

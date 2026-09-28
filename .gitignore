@@ -36,3 +36,11 @@ release/
 # 签名私钥绝不能进仓库，约定放在 %USERPROFILE%\.tauri\ 下
 *.key
 *.key.pub
+
+# Android 发布签名材料同样不进仓库（keystore 放在 %USERPROFILE%\.tauri\）
+src-tauri/gen/android/keystore.properties
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/build/
+src-tauri/gen/android/app/build/
+*.keystore
+*.jks
