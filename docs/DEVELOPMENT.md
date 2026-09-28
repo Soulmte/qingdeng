@@ -536,7 +536,27 @@ site/
 按钮的初始 `href` 指向发布页，所以 CDN 拉不到清单时页面依然能用。
 更新记录直接复用清单里的 `notes`，排法与 `src/lib/updater.ts` 的 `parseNotes()` 一致（一级标题丢掉，二级标题当小节，`- ` 当条目）。
 
-部署：`.github/workflows/pages.yml`，只在 `site/**` 变化时跑，`configure-pages` 的 `enablement: true` 会在仓库还没开 Pages 时自动打开。
+部署：`.github/workflows/pages.yml`，只在 `site/**` 变化时跑。
+
+> 第一次部署前必须先开启 Pages，而且 `build_type` 要选 `workflow`。
+> 工作流里虽然给 `configure-pages` 传了 `enablement: true`，实测在仓库从未开过 Pages 时它还是失败，
+> 所以一开始就手动建了一次：
+>
+> ```bash
+> curl -X POST -H "Authorization: Bearer <token>" -H "Accept: application/vnd.github+json" \
+>   -d '{"build_type":"workflow"}' https://api.github.com/repos/Soulmte/qingdeng/pages
+> ```
+>
+> 开好之后工作流里的 `configure-pages` 就能跑通了。
+
+查流水线状态（发布作业与下载页部署）用 `scripts/ci-check.py`，凭据从本机 git 凭据管理器取：
+
+```bash
+python scripts/ci-check.py runs            # 最近几次流水线
+python scripts/ci-check.py jobs <id>       # 某次流水线的每一步
+python scripts/ci-check.py release 0.3.0   # 某版的发布资产
+python scripts/ci-check.py dispatch pages.yml   # 手动重跑下载页部署
+```
 
 改完页面想先看一眼：
 
