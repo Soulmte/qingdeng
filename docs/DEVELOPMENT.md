@@ -353,7 +353,23 @@ git push origin main --tags
 | `ANDROID_KEY_PASSWORD` | 密钥口令 |
 
 少了 `TAURI_SIGNING_PRIVATE_KEY` 流水线会直接失败，而不是发出去一个 updater 不认的包。
-Android 那四项可以不配：没有时 APK 会构建成未签名包，只能用来验证构建能不能过。
+Android 那四项同理：没配置就报错退出，而不是发一个装不上的未签名 APK。
+
+也可以在 Actions 页面手动触发，并在 `only` 里选 `windows` / `android` 只跑一个平台：
+修完 Android 作业不必把 Windows 重新构建一遍。
+
+```bash
+curl -X POST -H "Authorization: Bearer <token>" \
+  https://api.github.com/repos/Soulmte/qingdeng/actions/workflows/release.yml/dispatches \
+  -d '{"ref":"main","inputs":{"only":"android"}}'
+```
+
+Android 作业用 runner 自带的 SDK，自己装 `platforms;android-37.0`、`build-tools;37.0.0`
+与 `ndk;27.0.12077973`。别换回 `android-actions/setup-android`：
+它会去装已经下架的 `tools` 包，实测报 `Failed to find package 'tools'` 后直接失败。
+另外这两个脚本里所有管道都处在 `set -o pipefail` 下，
+`yes | sdkmanager` 或 `cmd | head` 这类写法会因为上游吃到 SIGPIPE 把整步判成失败，
+已经踩过两次。
 
 密钥库是二进制，只能 base64 后放进 Secret：
 
