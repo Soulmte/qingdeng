@@ -7,8 +7,15 @@ on:
   push:
     tags:
       - "v*"
-  # 也可以在 Actions 页面手动触发，用当前 tauri.conf.json 里的版本号发一版
+  # 也可以在 Actions 页面手动触发，用当前 tauri.conf.json 里的版本号发一版。
+  # only 用来只跑一个平台：修完 Android 作业不必把 Windows 重新构建一遍。
   workflow_dispatch:
+    inputs:
+      only:
+        description: 只跑其中一个平台
+        type: choice
+        options: [all, windows, android]
+        default: all
 
 # 创建 Release 需要写权限
 permissions:
@@ -21,9 +28,7 @@ jobs:
   windows:
     name: Windows 安装包与更新清单
     runs-on: windows-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      notes_file: ${{ steps.notes.outputs.file }}
+    if: inputs.only != 'android'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -176,7 +181,7 @@ jobs:
   android:
     name: Android 安装包
     runs-on: ubuntu-latest
-    needs: windows
+    if: inputs.only != 'windows'
     steps:
       - uses: actions/checkout@v4
 
@@ -187,25 +192,48 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          targets: aarch64-linux-android
 
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
 
-      # Tauri 的 Android 构建需要 JDK 与 Android SDK/NDK
+      # Tauri 的 Android 构建需要 JDK
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
-
-      - name: 指定 NDK
+      - name: 读取版本号
+        id: version
         shell: bash
         run: |
-          sdkmanager --install "ndk;27.0.12077973"
-          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> "$GITHUB_ENV"
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "本次发布版本：$version"
+
+      # runner 自带的 Android SDK 就够了，不需要 android-actions/setup-android。
+      # 那个 action 会去装已经下架的 'tools' 包，实测直接报
+      # "Failed to find package 'tools'" 然后整个作业失败。
+      # 这里自己装齐生成的工程真正需要的三个组件（compileSdk 37 对应 android-37.0）。
+      - name: 安装所需的 SDK 组件
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          sdkmanager=$(ls "$sdk_root"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          if [ -z "$sdkmanager" ]; then
+            echo "::error::找不到 sdkmanager，runner 的 SDK 布局可能变了"
+            ls -R "$sdk_root" | head -40
+            exit 1
+          fi
+          echo "使用 $sdkmanager"
+          yes | "$sdkmanager" --licenses > /dev/null 2>&1 || true
+          yes | "$sdkmanager" --install \
+            "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.0.12077973"
+          echo "NDK_HOME=$sdk_root/ndk/27.0.12077973" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$sdk_root" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk_root" >> "$GITHUB_ENV"
 
       - name: 安装前端依赖
         run: npm ci
@@ -239,10 +267,21 @@ jobs:
         # 而平板真机基本都是 arm64。需要全 ABI 时把 --target 去掉。
         run: npm run tauri android build -- --apk --target aarch64
 
+      - name: 校验 APK 已签名
+        shell: bash
+        run: |
+          apk="src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk"
+          apksigner=$(ls "${ANDROID_SDK_ROOT:-$ANDROID_HOME}"/build-tools/*/apksigner 2>/dev/null | head -1)
+          if [ -z "$apksigner" ]; then
+            echo "::error::找不到 apksigner，无法确认 APK 签名"
+            exit 1
+          fi
+          "$apksigner" verify --print-certs "$apk" | head -3
+
       - name: 整理 APK 名称
         shell: bash
         run: |
-          version="${{ needs.windows.outputs.version }}"
+          version="${{ steps.version.outputs.version }}"
           mkdir -p release-assets
           cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
             "release-assets/QingDeng_${version}_arm64.apk"
@@ -251,7 +290,7 @@ jobs:
       - name: 把 APK 挂到同一个 Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.windows.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
           files: release-assets/QingDeng_*_arm64.apk
 
       # APK 不参与自动更新，但平板上要人工下载，同样镜像到 cdn 分支走 jsDelivr。
@@ -262,7 +301,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          version="${{ needs.windows.outputs.version }}"
+          version="${{ steps.version.outputs.version }}"
           work="$RUNNER_TEMP/cdnws"
           rm -rf "$work"
           git clone -q --depth 1 --branch cdn \
@@ -282,7 +321,7 @@ jobs:
       - name: 刷新 jsDelivr 缓存（APK）
         shell: bash
         run: |
-          version="${{ needs.windows.outputs.version }}"
+          version="${{ steps.version.outputs.version }}"
           url="https://purge.jsdelivr.net/gh/${{ github.repository }}@cdn/QingDeng_${version}_arm64.apk"
           for attempt in 1 2 3; do
             if curl -fsS --max-time 30 "$url" > /dev/null; then

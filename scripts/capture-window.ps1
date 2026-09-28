@@ -21,7 +21,9 @@ param(
   # 侧边栏导航项中心的 y 坐标（相对窗口左上角，含标题栏），按界面顺序
   [int[]]$NavY = @(170, 218, 266, 314, 362),
   [string[]]$Names = @("timer", "tasks", "modes", "stats", "settings"),
-  [int]$NavX = 110
+  [int]$NavX = 110,
+  # 加了别的弹层（比如更新提示）时用：只固定窗口截一张，不做任何点击
+  [switch]$NoClick
 )
 
 $ErrorActionPreference = "Stop"
@@ -84,6 +86,13 @@ function Save-Shot([string]$path) {
   }
   $bmp.Dispose()
   return [math]::Round($sum / [math]::Max(1, $n), 1)
+}
+
+if ($NoClick) {
+  $path = Join-Path $OutDir "$($Names[0]).png"
+  $b = Save-Shot $path
+  Write-Host ("  {0} -> {1}（不点击，平均亮度 {2}）" -f $Names[0], $path, $b)
+  return
 }
 
 for ($i = 0; $i -lt $Names.Count; $i++) {
