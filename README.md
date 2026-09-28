@@ -1,456 +1,125 @@
-# 青灯 QingDeng
+# 青灯
 
 > 独对青灯，专注有时
 
-基于 Tauri + React 的专注计时工具，桌面（Windows）与 Android 平板共用一套代码与数据模型：多种计时形态、任务清单、考试与学习休息模式、沉浸模式，所有数据保存在本机 SQLite 中。
+一个安静的专注计时工具，帮你把「该干活了」变成一件有始有终的事：选好时长，点开始，剩下的交给它——专注与休息首尾相接，不用反复点开始；记录自动攒下来，看得出这些时间花在了哪里。
 
-## 功能
+不需要注册，不联网同步，所有记录只存在你自己的设备上。
 
-| 需求 | 实现 |
+<!-- 建议放 1–2 张截图，放在这里效果最好，GitHub 会显示在介绍之后：
+     ![计时页](docs/images/timer.png)
+     截图可以存在 docs/images/ 下 -->
+
+## 它能做什么
+
+| 你想要的 | 青灯怎么做 |
 | --- | --- |
-| 亮暗场景切换 | HeroUI 主题体系（`.dark` + `data-theme`），首屏渲染前同步主题类避免闪白；设置页可选跟随系统 |
-| 时钟多形态 | 圆环钟（SVG 进度环 + 刻度）、翻页钟（CSS 3D 折叠动画）、常态倒计时（大字号 + 细进度条），可随时切换 |
-| 圆环自适应 | 圆环最大边长 520px（沉浸模式 760px）并按视口高度收缩；时间字号按位数分三档，`10:00:00` 这类长时长不会溢出圆环 |
-| 正倒计时 | 倒计时按阶段推进并自动排休息；正计时只累计投入时间，手动结束 |
-| 预设模板 | 内置经典番茄钟、深度专注、学习休息、考试模式、正计时五种模板，支持新建 / 编辑 / 删除 / 复制自定义模板 |
-| 模板入口 | 计时页顶部的「模板与时长」按钮打开弹窗，左栏切换与管理模板，右栏是系统预设时长与自定义单次计时 |
-| 系统预设时间 | 5 / 10 / 15 / 25 / 45 / 60 / 90 分钟一键开始，不计入模板列表 |
-| 自定义单次时间 | 分秒自由输入（带加减按钮），可选正倒计时，只对本次生效 |
-| 考试模式 | 单段倒计时、不插入休息、结束即停；剩余时间与预计结束时刻同时展示 |
-| 学习休息模式 | 45 分钟学习 + 15 分钟休息自动接续，每 2 轮进入 30 分钟长休息 |
-| 任务清单 | 任务含标题、备注、预估段数；关联到计时后，完成的专注段自动累加到任务进度，可设为「当前任务」、完成 / 恢复 / 删除 |
-| 沉浸模式 | 自动全屏、隐藏导航与设置项，顶部常驻当前时间与日期，鼠标静止 3 秒后自动隐藏操作栏；当前时间是否常驻可开关 |
-| 提醒 | 阶段结束播放 Web Audio 合成提示音；应用不在前台时额外发送系统通知；专注段恰好补满任务的预估段数时单独提醒一次 |
-| 专注免打扰 | 计时期间可调用 Windows 11 专注助手静音其他应用通知（`FocusSessionManager`），并提供本应用提醒白名单；一键跳转系统通知设置（免打扰是系统级能力，应用无法代替用户维护优先应用名单） |
-| 统计 | 今日 / 区间 / 完成段数 / 平均时长四个指标，含每日时长柱状图、每日完成段数折线图、模板占比环形图；图表左侧给出数值轴，模板占比图例带分钟数与百分比并与环形图悬停联动 |
-| 日期窗口 | 统计区间最多回溯 N 天，但从第一条记录那天开始截断，避免刚使用时出现一长串空白日期 |
-| 数据导出 | 一键导出完整备份（JSON）或记录表（CSV，带 BOM，Excel 直接打开不乱码），导出后自动在资源管理器中定位文件 |
-| 自动接续 | 专注与休息首尾相接，阶段结束自动开始下一段，不用每轮重新点开始；可在设置里关掉，改成每段手动开始 |
-| 手动结束本段 | 不必等整轮跑完，随时按「结束本段」把已用时间计入统计再接续下一段；另有「重置」清零当前阶段、「跳过」不计入本段用时 |
-| 应用内更新 | 启动时拉取 `latest.json`，有新版本弹窗列出更新内容，确认后下载、签名校验、安装并自动重启；更新包走 jsDelivr，国内下载不用直连 GitHub；设置页可手动检查或忽略某版本 |
-| 数字输入 | 全部用带加减按钮的步进控件；时长按时 / 分 / 秒三段输入（1 小时 30 分不用自己换算成分钟）；步长取 5 且 `min` 与 `step` 对齐（如每日目标 5 + n×5），避免输入 120 被吸附成 115 |
-| 模板编辑 | 先用「排休息 / 不排休息」两个按钮定下模式，再填具体时长，底部实时生成一句「运行效果」描述 |
-| 界面细节 | 统一的自定义滚动条（随主题换色）、字段边框与暗色填充、全站步进式数字输入、自绘的青灯标识 |
-| 设备适配 | 同一套页面在桌面与 Android 平板上按宽度切成侧边栏 / 图标栏 / 底栏三种导航形态，触控设备自动放大点击区域；桌面独有的系统能力（窗口置顶、免打扰、阻止休眠、定位文件）按平台自动隐藏 |
+| 标准的番茄钟节奏 | 内置经典番茄钟：25 分钟专注 + 5 分钟休息，4 轮后长休 15 分钟 |
+| 一次坐下来干很久 | 深度专注（50 / 10）、学习休息（45 / 15），也可以按自己的节奏自建模板 |
+| 模拟考试或限时任务 | 考试模式：单段倒计时、不插休息、结束即停，剩余时间与预计结束时刻一起显示 |
+| 只想记录投入了多久 | 正计时：只累计时间、手动结束，适合「从几点学到几点」这种记录 |
+| 知道时间花在哪 | 任务清单 + 统计：今日 / 区间 / 完成段数 / 平均时长，配三种图表 |
+| 不被打扰 | 沉浸模式（自动全屏、顶部常驻当前时间）、阶段结束提示音、Windows 免打扰 |
+| 三种看时间的方式 | 圆环、翻页、常态倒计时，随时切换 |
+| 数据自己拿着 | 一键导出 JSON 备份与 CSV 记录表（Excel 直接打开不乱码） |
 
-界面不使用任何 emoji，图形元素由 lucide 图标、bklit 图表与手写 SVG/CSS 构成。
+## 下载与安装
 
-## 技术栈
+到 [Releases](https://github.com/Soulmte/qingdeng/releases/latest) 下载最新版。
 
-| 层 | 选型 |
+### Windows
+
+下载 `QingDeng_<版本>_x64-setup.exe`，双击安装，装好后从开始菜单启动，图标名字是「青灯」。
+
+- 支持 Windows 10 / 11（64 位），依赖系统自带的 WebView2（Win11 自带，Win10 一般也有）
+- 有新版本会自动提示，并在弹窗里列出更新内容，确认后自动下载安装
+
+### Android 平板
+
+下载 `QingDeng_<版本>_arm64.apk`，传到平板后点开安装。
+
+- 需要 Android 7.0 及以上，且是 arm64 设备（绝大多数现代平板都是）
+- 首次安装时系统会拦一下，需要在提示里允许「安装未知来源的应用」
+- 平板上的更新方式是下载新 APK 覆盖安装，没有应用内自动更新（系统不允许应用静默替换自己）
+
+> 这个 APK 只包含 arm64 架构，装在电脑上的 Android 模拟器（通常是 x86_64）会提示不兼容。
+
+## 上手三步
+
+1. **选模板** —— 点计时页左上角的「模板与时长」
+2. **定时长** —— 左栏挑模板，右栏是 5 / 10 / 15 / 25 / 45 / 60 / 90 分钟一键开始，也可以自己填时分秒
+3. **点开始** —— 之后专注和休息会自己接下去，中途随时可以暂停
+
+### 控制条上三个容易混的按钮
+
+| 按钮 | 什么时候用 |
 | --- | --- |
-| 桌面容器 | Tauri 2（Rust 1.98） |
-| 移动端 | Tauri 2 Android（同一前端产物，平台能力隔离见下） |
-| 前端 | React 19 + TypeScript 6 + Vite 8 |
-| UI 组件 | HeroUI v3（Tailwind CSS v4） |
-| 图表 | bklit（shadcn registry，基于 visx） |
-| 状态管理 | Zustand |
-| 本地存储 | SQLite（`@tauri-apps/plugin-sql`） |
-| 桌面能力 | 全屏与置顶（core window）、阻止休眠（`keepawake`）、系统通知、应用内更新（`tauri-plugin-updater`）、资源管理器定位（opener） |
-| 移动能力 | 系统通知，其余桌面独有能力在 Android 上关闭 |
-| 图标 | lucide-react |
+| 结束本段 | 这一段就到这儿。已用的时间照样计入统计，然后接续下一段 |
+| 重置 | 刚才那段不算了，当前阶段从头重新计时 |
+| 跳过 | 整段跳过，不计入本段用时，直接进入下一段 |
 
-## 运行
+## 界面说明
 
-前置：Node 22+、Rust 1.80+、Windows WebView2（Win11 自带）。
-
-```bash
-npm install
-npm run tauri dev      # 开发模式，前端 1420 端口由 CLI 自动拉起
-npm run tauri build    # 打包安装程序，产物在 src-tauri/target/release/bundle
-```
-
-打包脚本默认用 `tauri.conf.json` 里的 `productName`（青灯）命名安装包，
-所以产物是 `青灯_<版本>_x64-setup.exe`（NSIS），同时产出同名的 `.exe.sig` 供自动更新校验。
-
-> `bundle.targets` 固定为 `nsis`。WiX 工具链（`light.exe`）处理不了中文产品名，
-> 带上 `msi` 会直接构建失败；需要 MSI 的话得把产品名改回英文。
-
-数据文件在首次启动时自动创建：
-
-```
-%APPDATA%\com.qingdeng.app\qingdeng.db
-%APPDATA%\com.qingdeng.app\exports\        # 导出的备份与 CSV
-```
-
-建表由 `src-tauri/src/lib.rs` 里的 Migration 在应用启动时执行，字段说明见 `docs/schema.sql`。
-
-## Android 平板版
-
-同一份前端产物同时跑在 Windows 桌面与 Android 平板上：布局按窗口宽度自适应，平台差异集中到 `src/lib/platform.ts` 一处判断，组件只问「有没有这个能力」，不自己判断平台。
-
-### 布局
-
-| 宽度 | 导航形态 | 说明 |
-| --- | --- | --- |
-| ≥ 1024px（平板横屏 / 桌面） | 左侧完整侧边栏 224px | 品牌区、导航与今日概览 |
-| 768–1023px（平板竖屏） | 左侧图标栏 76px | 只留图标，悬停显示名称；顶栏改用紧凑版今日进度 |
-| < 768px（手机） | 底部导航 | 预留 `env(safe-area-inset-bottom)`，避开手势条 |
-
-- 顶栏的紧凑进度是一枚胶囊（灯位 + 盏数 + `分钟/目标`），不写「分钟」两字，把侧边栏的竖向空间腾给主内容。
-- 圆环钟最大边长 520px（沉浸模式 760px）并按视口高度 46vh 收缩，竖屏平板不会横向溢出。
-- `@media (pointer: coarse)` 下按钮、步进器与开关的点击区域放大到 44px 以上，数字输入组 56px，适配手指操作。
-- 沉浸模式在触屏上改为 `pointerdown` 唤出控制栏；窗口置顶 / 自动全屏等只在桌面出现的开关会整行隐藏。
-
-### 平台能力差异
-
-| 能力 | Windows 桌面 | Android 平板 |
-| --- | --- | --- |
-| 全屏 / 窗口置顶 | 支持 | 不提供，设置页隐藏对应行 |
-| 阻止屏幕休眠 | `keepawake` | 无该 crate 实现，命令返回成功但不生效 |
-| 系统免打扰 | Windows 11 专注助手 | 不提供，整块设置卡片隐藏 |
-| 导出后定位文件 | 资源管理器 | 不提供 |
-| 三种时钟 / 模板 / 任务 / 统计 / 导出 | 支持 | 相同 |
-
-导出目录在 Android 上是应用私有目录 `/data/data/com.qingdeng.app/files/exports`，设置页会按平台换文案。
-
-### 本地环境
-
-工具链与项目代码分开放，重装项目或清 `target` 都不会动到几个 GB 的 SDK：
-
-| 项 | 位置 |
+| 页面 | 做什么 |
 | --- | --- |
-| JDK | `D:\enviroment\jdk-21.0.1\jdk-21.0.1`（已设 `JAVA_HOME`） |
-| Android SDK | `D:\enviroment\android-sdk`（已设 `ANDROID_HOME` / `ANDROID_SDK_ROOT`） |
-| Android NDK | `D:\enviroment\android-sdk\ndk\27.0.12077973`（已设 `NDK_HOME`） |
-| 发布密钥库 | `%USERPROFILE%\.tauri\qingdeng-android.keystore`（不进仓库） |
-
-SDK 里已装：`cmdline-tools;latest`、`platform-tools`、`platforms;android-37.0`、`build-tools;37.0.0`、`ndk;27.0.12077973`。
-注意 Android 现在用次版本号命名平台包，所以是 `android-37.0` 而不是 `android-37`。
-
-环境变量由一个脚本写入（可重复执行，不会重复追加 PATH）：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\setup-android-env.ps1
-```
-
-### Windows 上必须先开开发者模式
-
-`tauri android build` 不会把 Rust 产出的 `.so` 拷进 `jniLibs`，而是建一个符号链接；
-Windows 只有在开发者模式打开时才允许普通进程建链接，否则报：
-
-```
-failed to create a symbolic link ... Creation symbolic link is not allowed for this system
-```
-
-开启需要管理员权限，所以单独拆了一个脚本（会弹 UAC）：
-
-```powershell
-powershell -Command "Start-Process powershell -Verb RunAs -ArgumentList '-ExecutionPolicy','Bypass','-File','scripts\enable-dev-mode.ps1'"
-```
-
-### 构建
-
-```bash
-rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-npm run tauri android init      # 生成 src-tauri/gen/android 工程（已提交，重跑不会覆盖 Gradle 修改）
-npm run tauri android dev       # 连上平板真机或模拟器调试
-npm run tauri android build -- --apk --target aarch64   # 只出 arm64 的 APK，快得多
-npm run tauri android build -- --apk                    # 四种 ABI 都打，体积大、编译久
-```
-
-产物在 `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`。
-
-### 签名
-
-Android 不装未签名的 APK，所以发布包必须签名。签名材料有两处，都不会进仓库：
-
-- 密钥库：`%USERPROFILE%\.tauri\qingdeng-android.keystore`
-- 配置：`src-tauri/gen/android/keystore.properties`（写库路径、别名与口令）
-
-`app/build.gradle.kts` 里有签名配置：有 `keystore.properties` 就用它，
-没有就退回读 `ANDROID_KEYSTORE_PATH` 等环境变量（CI 用），两者都没有则产出未签名 APK。
-空字符串也会当成未配置，避免 CI 传了空 secret 就拼出一个非法路径。
-
-校验签名：
-
-```bash
-"$ANDROID_HOME/build-tools/37.0.0/apksigner.bat" verify --print-certs <apk>
-```
-
-安装后桌面上的名字取自 `tauri.conf.json` 的 `productName`，现在是「青灯」，
-所以 Windows 安装包是 `青灯_<版本>_x64-setup.exe`。应用内部标识仍是 `com.qingdeng.app`，
-改显示名不会动到数据目录，已有的记录不会丢。
-
-`Cargo.toml` 里 `keepawake`、`windows`、`tauri-plugin-updater`、`tauri-plugin-process`
-四个依赖都按目标平台分区引入，Android 上不参与编译；
-`src-tauri/src/lib.rs` 中桌面独有的状态与命令都有 `#[cfg]` 守卫，Android 走 no-op 分支。
-`vite.config.ts` 已按 Tauri 约定读取 `TAURI_DEV_HOST`，真机调试时前端会监听局域网地址。
-
-## 应用内更新（jsDelivr + GitHub Releases）
-
-更新走「静态清单 + 签名校验」：应用启动时拉一份 `latest.json`，版本号比本地新就弹窗，
-把清单里的 `notes` 当作「更新内容」展示，用户确认后下载更新包、校验签名、安装并重启。
-
-```mermaid
-graph LR
-    A[启动] --> B[拉 latest.json]
-    B -->|无新版 / 网络不通| C[静默跳过]
-    B -->|版本更新| D[弹窗展示更新内容]
-    D -->|稍后 / 忽略此版本| E[记录忽略的版号]
-    D -->|立即更新| F[从 jsDelivr 下载更新包]
-    F --> G[校验签名后安装并重启]
-```
-
-### 两个通道，各管一件事
-
-GitHub 在国内直连慢，所以把「清单」和「下载」拆开走两条路：
-
-| 内容 | 主通道 | 备通道 | 大小 |
-| --- | --- | --- | --- |
-| `latest.json` 清单 | jsDelivr（发版后自动刷新缓存） | GitHub Releases | 2 KB |
-| 更新包 | jsDelivr（文件名带版本号 → 永久缓存） | — | 3.3 MB |
-| 手动安装包 `.exe` / APK | GitHub Releases（APK 另镜像一份到 jsDelivr） | — | 3.2 / 8.4 MB |
-
-清单很小，就算走 GitHub 也就几十毫秒，所以它主要是「拿得准」；真正慢的是几 MB 的更新包，
-所以更新包的地址直接写成 jsDelivr，客户端下载就绕开了 GitHub。
-
-```json
-"endpoints": [
-  "https://cdn.jsdelivr.net/gh/Soulmte/qingdeng@cdn/latest.json",
-  "https://github.com/Soulmte/qingdeng/releases/latest/download/latest.json"
-]
-```
-
-两个都在 `src-tauri/tauri.conf.json` 的 `plugins.updater.endpoints`。
-注意 Tauri 的官方行为：**只有前一个地址返回非 2XX 才会试下一个**，连接超时不会自动回退，
-所以 jsDelivr 放在第一位是为了国内能快速拿到清单。
-
-### 为什么更新包是 `.nsis.zip` 而不是 `.exe`
-
-jsDelivr 会直接 403 拦掉 `.exe`，实测结果：
-
-| 扩展名 | 结果 |
-| --- | --- |
-| `.exe` | 403 Forbidden |
-| `.nsis.zip` / `.zip` | 200 |
-| `.apk` | 200 |
-| `.json` / `.sig` | 200 |
-
-所以 `bundle.createUpdaterArtifacts` 设为 `"v1Compatible"`，Tauri 会额外产出
-`青灯_<版本>_x64-setup.nsis.zip` 作为 updater 包（updater 会自己解包再跑安装程序），
-这个格式能上 jsDelivr。`.exe` 仍然照常产出，只是不参与自动更新。
-
-> 需要注意：`v1Compatible` 是官方标注的迁移用格式，Tauri v3 会移除。
-> 将来若要改用自建 CDN（下面一节），就应该把它改回 `true` 直接分发 `.exe`。
-
-### 换成自己的 CDN
-
-如果你有阿里云 OSS / 腾讯云 COS 这类国内对象存储，就可以彻底不走 jsDelivr：
-
-1. 把 `createUpdaterArtifacts` 改回 `true`（直接分发 `.exe`）
-2. 发版时 `npm run release:manifest -- --asset-base https://<你的域名>/qingdeng`
-3. 把 `latest.json`、`青灯_<版本>_x64-setup.exe` 与其 `.sig` 传到这个目录
-4. `tauri.conf.json` 的 `endpoints` 第一条换成你的 `latest.json` 地址
-
-`--asset-base` 就是为这件事留的开关，其余逻辑都不用动。
-
-### cdn 分支
-
-仓库里的 `cdn` 分支不是代码分支，只放客户端要下载的文件：
-
-```
-cdn
-├── latest.json                            # 清单（发版后 purge 缓存立即生效）
-├── QingDeng_<版本>_x64-setup.nsis.zip     # updater 包
-├── QingDeng_<版本>_x64-setup.nsis.zip.sig # 对应签名
-└── QingDeng_<版本>_arm64.apk              # 平板手动下载
-```
-
-文件名必须和 `latest.json` 里的 `url` 逐字一致，否则 404。
-每个版本的文件名都带版本号，所以旧版本用户去下载时也能命中各自的缓存。
-分支每次发版强推重建，所以它本身只有最新一版的文件。
-
-> 实测踩到的一个坑：**同名文件重新发布时，jsDelivr 会继续发旧内容**。
-> 正常发版因为文件名带版本号不会撞上；但如果手动重传了同一个文件名（比如修图后重打同一个版本的 APK），
-> 必须刷一次缓存才会生效，而且刷完要等几十秒才全量生效：
->
-> ```bash
-> curl "https://purge.jsdelivr.net/gh/Soulmte/qingdeng@cdn/<文件名>"
-> ```
-
-### 签名密钥
-
-updater 只接受签名过的包，所以发版必须有私钥：
-
-- 私钥（**不要进仓库**）：`%USERPROFILE%\.tauri\qingdeng.key`
-- 公钥（已写入配置）：`%USERPROFILE%\.tauri\qingdeng.key.pub`
-
-私钥丢了就无法再发布更新，只能提醒用户重新下载安装。
-换公钥等于换密钥对，老版本将无法验证新包。
-
-### 自动发布（推荐）
-
-`.github/workflows/release.yml` 已经把整条链路接好了，推一个 `v*` 标签就自动完成：
-打包 → 签名 → 生成 `latest.json` → **校验签名与更新包配对** → 建 Release → 同步 `cdn` 分支 → 刷新 jsDelivr 缓存。
-客户端下次启动就能看到更新弹窗。
-
-那道校验是发布前的闸门：updater 只认签名，一旦清单里的 `signature` 与上传的文件对不上
-（换错文件、传了旧 `.sig`、改了资产名却没改 `url`），用户会「下载成功但更新无反应」，
-而且只有真正发出去才会暴露，所以宁可让流水线在这一步失败。本地可以单独跑：
-
-```bash
-npm run release:verify        # 自动在 bundle 目录里按签名反查配对的文件
-```
-
-```bash
-# 1. 三处版本号一起改：package.json、src-tauri/tauri.conf.json、src-tauri/Cargo.toml
-# 2. 想要中文更新说明就写 docs/release-notes/<版本>.md，不写则自动用上一个标签以来的提交记录
-# 3. 提交后打标签推送
-git commit -am "Bump version to 0.2.0"
-git tag v0.2.0
-git push origin main --tags
-```
-
-流水线需要两个仓库 Secret（Settings → Secrets and variables → Actions）：
-
-| Secret | 值 |
-| --- | --- |
-| `TAURI_SIGNING_PRIVATE_KEY` | `%USERPROFILE%\.tauri\qingdeng.key` 文件里的完整内容 |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 生成密钥时设的口令；生成时留空就也留空 |
-| `ANDROID_KEYSTORE_BASE64` | 密钥库 base64 后的内容（见下） |
-| `ANDROID_KEYSTORE_PASSWORD` | 密钥库口令 |
-| `ANDROID_KEY_ALIAS` | 密钥别名，当前是 `qingdeng` |
-| `ANDROID_KEY_PASSWORD` | 密钥口令 |
-
-少了 `TAURI_SIGNING_PRIVATE_KEY` 流水线会直接失败，而不是发出去一个 updater 不认的包。
-Android 那四项可以不配：没有时 APK 会构建成未签名包，只能用来验证构建能不能过。
-
-密钥库是二进制，只能 base64 后放进 Secret：
-
-```bash
-base64 -w0 "%USERPROFILE%/.tauri/qingdeng-android.keystore" > keystore.b64   # 或 certutil -encode
-```
-
-Android 作业跟在 Windows 之后，把 APK 挂到同一个 Release。它不参与自动更新，
-只作为下载入口（平板上更新靠下载 APK 覆盖安装）；即使 Android 作业失败，
-Windows 用户的更新链路也不受影响。
-
-### 手动发布
-
-本地发一版（排查流水线问题时用）：
-
-```bash
-set TAURI_SIGNING_PRIVATE_KEY=%USERPROFILE%\.tauri\qingdeng.key
-npm run tauri build
-npm run release:manifest -- --notes-file docs/release-notes/0.2.0.md
-```
-
-脚本会打印需要上传的文件清单与目标名；文件名必须逐字照做，因为 `latest.json` 里的 `url`
-已经按那些名字写好。它会先检查签名是否存在、更新内容是否为空，缺任何一样都直接报错退出。
-
-需要上传两处：
-
-- `cdn` 分支：`latest.json` + 更新包与它的 `.sig`（客户端从这里下载）
-- 对应的 Release：手动安装包 `.exe`（供人工下载），可选带上更新包与清单
-
-传完 `cdn` 分支后记得刷一次 jsDelivr 缓存，否则清单最多要等 12 小时：
-
-```bash
-curl "https://purge.jsdelivr.net/gh/Soulmte/qingdeng@cdn/latest.json"
-```
-
-### 本地试跑
-
-把 `endpoints` 临时改成 `http://localhost:8788/latest.json`，
-在 `release/` 下起一个静态服务器（`npx serve release`），
-把 `release/latest.json` 的 `version` 改成本地更高的值，重新打开应用就能看到弹窗；
-改回小于等于本地版本即可关闭。
-
-### Android 的差异
-
-Android 不允许应用静默覆盖安装自己，所以 `updater` 插件只在桌面端注册，
-Capability 也在 `src-tauri/capabilities/updater.json` 里用 `platforms` 限定为 `windows / macOS / linux`。
-平板上更新靠下载 APK 覆盖安装：APK 会同时挂到 Release 和 `cdn` 分支（jsDelivr 是放行 `.apk` 的）。
-
-注意 APK 不像 Windows 更新包那样有应用内签名校验（签名由 Android 系统在安装时把关，
-所以覆盖已装应用是安全的，但首次安装时请优先用 Release 里的那份）。
-
-## 目录结构
-
-```
-src/
-├── App.tsx                     路由与启动时数据恢复
-├── db/client.ts                SQLite 访问层，snake_case 只在这里出现
-├── stores/
-│   ├── timerStore.ts           计时状态机（阶段推进、入库、提示音与通知）
-│   ├── taskStore.ts            任务清单与进度聚合
-│   ├── settingsStore.ts        偏好设置，落到 settings 表
-│   ├── presetStore.ts          自定义模板 CRUD
-│   ├── immersiveStore.ts       沉浸模式状态 + 全屏副作用
-│   ├── updateStore.ts          更新检查、下载进度与「忽略此版本」
-│   └── dataStore.ts            记录版本号，驱动统计与任务进度刷新
-├── lib/                        纯函数：时间格式化、预设规则、统计聚合、导出、通知、主题、提示音
-│   ├── platform.ts             平台能力判断（窗口控制 / 免打扰 / 阻止休眠 / 应用内更新）
-│   └── updater.ts              拉取 CDN 清单、比对版本、下载安装与重启
-├── hooks/                      时钟数据换算、模板与任务管理流程、记录查询、窗口同步、快捷键
-├── components/
-│   ├── BrandMark.tsx           自绘的青灯标识（内联 SVG）
-│   ├── UpdateDialog.tsx        启动时的新版本弹窗（版本号 + 更新内容 + 下载进度）
-│   ├── clock/                  三种时钟形态 + 字号自适应表
-│   ├── timer/                  控制条、模板与任务弹窗、快速开始、模板编辑
-│   ├── task/                   任务行与任务编辑弹窗
-│   ├── layout/                 侧边栏、主题切换、今日概览
-│   ├── charts/                 bklit 图表组件（registry 生成，勿手改）
-│   └── ui/                     自行封装的轻量控件（分段选择器、步进输入、弹层）
-└── views/                      计时 / 任务 / 模式 / 统计 / 设置五个页面
-```
-
-## 开发辅助
-
-没有图形界面时可以用结构检查脚本确认页面真的渲染出了关键元素：
-
-```bash
-npm run check:dom          # 结构：渲染成静态 HTML 后断言语义与关键元素
-npm run check:interaction  # 交互：在 jsdom 里真的输入与点击，验证控件能改
-```
-
-`check:dom` 覆盖设置页、计时页、任务页、模板与任务弹窗、统计页、侧边栏，
-逐项校验开关数量、圆环字号档位、步进控件、日期窗口、CSV 转义等结构，
-渲染结果写到 `scripts/out-*.html` 供人工查看。
-
-`check:interaction` 用 jsdom 真实渲染模板编辑弹窗与更新弹窗，模拟输入两位数、点击加减按钮、
-点击常用时长与「不排休息」，验证状态与摘要确实联动；
-另有一组直接驱动计时状态机的断言：默认自动接续、
-结束本段会落库并接续下一段、关掉自动接续后停在原地、跳过不计入不足 30 秒的片段。
-（jsdom 缺少的 `PointerEvent` / `InputEvent` / `CSS` 等在 `scripts/dom-setup.ts` 里补齐；
-弹层用 `createPortal` 挂到 body，断言需从 `document.body` 查。
-注意 zustand 在静态渲染下读的是初始状态，所以依赖运行时状态的弹窗只能在 jsdom 里验证。）
-
-验证 Windows 专注助手接口是否可用（只读，不会改动系统免打扰状态）：
-
-```bash
-cd src-tauri && cargo run --example focus_probe
-```
+| 计时 | 主界面：时钟、控制条、当前模板、关联的任务 |
+| 任务 | 建任务、填预估段数；关联到计时后，完成的专注段会自动累加到进度里 |
+| 模式 | 管理模板（内置 5 个 + 自建的），切换当前用哪一个 |
+| 统计 | 今日 / 区间 / 完成段数 / 平均时长，配每日时长柱状图、完成段数折线图、模板占比环形图 |
+| 设置 | 亮暗主题、时钟形态、每日目标、自动接续、提示音、免打扰、沉浸模式、导出与清空数据、检查更新 |
+
+## 计时是怎么走的
+
+- 专注结束后按「短休息 → 专注 → … → 长休息」推进，长休息出现在每 N 轮专注之后（N 由模板决定）。
+- 阶段结束默认**自动开始下一段**，不用每轮重新点开始；想每段都手动开始，就在设置里关掉「自动接续下一段」。
+- 休息时间配成 0 分钟表示这个模板不排休息，轮次就变成「连续做完几段就结束」。
+- 计时按时间戳推算，窗口失焦、系统休眠恢复后都不会走偏。
+- 太短的中断不留记录，免得误触把统计搅乱；「结束本段」是明确操作，门槛比误触宽松得多。
+- 记录会带上当时的任务名，任务删掉之后也还能回溯。
 
 ## 快捷键
 
 | 按键 | 作用 |
 | --- | --- |
-| `Space` | 开始 / 暂停（输入框内不拦截） |
-| `Esc` | 退出沉浸模式 |
+| 空格 | 开始 / 暂停（光标在输入框里时不会拦截） |
+| Esc | 退出沉浸模式 |
 
-## 计时规则
+触摸屏上轻点画面可以唤出控制栏。
 
-- 专注结束后按「短休息 → 专注 → … → 长休息」推进，长休息出现在每 N 轮专注之后（N 由模板的 `roundsPerSet` 决定）。
-- 休息时长配成 0 表示该模板不排休息，`roundsPerSet` 此时表示「连续完成几段专注后结束」；配成 1 就是考试模式那种单段倒计时。
-- 模板的 `autoStartNext` 与设置里的「自动接续下一段」任意一个开着就自动接续，设置默认开启；
-  关掉后每段结束停在待开始状态，等用户手动点开始。
-- 「结束本段」按实际用时入库后接续下一段（落库时 `completed = 0`，不计入「完成段数」，但计入时长统计）；
-  手动结束只要求 10 秒以上，「跳过」与「重置」仍按 30 秒门槛，避免误触产生的碎片记录。
-- 只有持续 30 秒以上的中断片段才会入库，避免误触污染统计；完整跑完的阶段必定入库。
-- 「结束本段」是明确操作，门槛放宽到 10 秒；不足 10 秒的手动结束不会留下记录。
-- 计时使用时间戳推算已经过的毫秒数，窗口失焦或系统休眠恢复后不会累积误差。
-- 记录会带上当时的任务 id 与任务名，任务删除后仍能回溯；任务进度只统计「已完成」的专注段。
-- 系统免打扰只在真正跑着计时的时候开启，暂停或结束立即交还控制权；只会关闭自己开启的专注会话，不会影响用户手动开的免打扰。
-- 时长步长统一为 5（分与秒同规则），小时为 1 小时一档；常用专注时长在模板弹窗里有一键按钮。
+## 常见问题
 
-## 已知限制
+**我的数据存在哪？会被上传吗？**
 
-- 阶段结束提示音为 Web Audio 合成的双音，没有提供自定义音频文件。
-- 任务没有子任务、截止日期与手动排序。
-- 手写弹层只实现了遮罩点击与 Esc 关闭，没有做完整的焦点循环。
-- 导出只支持 JSON 备份与 CSV 记录表，暂不支持导入恢复。
-- 更新只能向前，不做降级；CDN 清单拉不下来时静默跳过，不阻塞启动。
-- 更新包没做差分，每次都是完整安装包。
-- Android 版不支持应用内自动更新，只能下载 APK 覆盖安装。
+只存在你自己的设备上。不联网、不上传、不需要账号。想备份或换设备，用设置页的「导出完整备份」；想要能直接看的表格，用「导出记录表」导成 CSV，Excel 打开不会乱码。
+
+**为什么休息结束会自己开始下一段专注？**
+
+这是默认开启的「自动接续」，目的是省掉每轮点一次开始。不想要就在设置里关掉，关闭后每段结束会停在待开始状态。
+
+**我忘了点结束就关掉窗口，会怎样？**
+
+时长按真实经过的时间算，窗口失焦或系统休眠恢复后都不会走偏；但没点「结束本段」、也没跑完整段的话，那一段不会留下记录。
+
+**任务和记录是什么关系？**
+
+记录可以关联到一个任务。完整跑完的专注段会自动累加到任务进度里；没关联任务的记录也照常计入统计，两者不冲突。
+
+**统计里的「完成段数」和我数的不一样？**
+
+只有完整跑完的专注段才算「完成」。「结束本段」提前收尾的那些，时间会计入时长统计，但不算完成段数——这样「我今天干净地做完了 6 段」才是个可信的数字。
+
+**Android 上为什么没有自动更新？**
+
+Android 不允许应用静默覆盖安装自己。新版本需要下载 APK 覆盖安装；因为新旧包用同一个签名，覆盖安装能平滑升级，数据也不会丢。
+
+**换电脑了，记录能带走吗？**
+
+可以导出 JSON 备份留档。目前应用内还没有导入功能（在待做清单里），临时查看可以用导出的 CSV 配合 Excel。
+
+## 反馈
+
+发现 bug、想要某个功能，或者有别的想法，欢迎到 [Issues](https://github.com/Soulmte/qingdeng/issues) 说一声。
+
+## 开发者
+
+构建、打包、Android 环境搭建、更新机制与发版流程见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。

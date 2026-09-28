@@ -6,7 +6,9 @@ import {
   CircleDashed,
   Download,
   Eraser,
+  ExternalLink,
   FileSpreadsheet,
+  MessageSquare,
   RefreshCw,
   Settings,
   SquareStack,
@@ -19,13 +21,13 @@ import { applyFocusAssist, openSystemSettings } from "@/lib/desktop";
 import { exportBackup, exportSessionsCsv } from "@/lib/exporter";
 import { GOAL_MAX, GOAL_MIN, GOAL_STEP } from "@/lib/presetEditor";
 import {
-  isAndroid,
   isTouchPrimary,
   supportsAutoUpdate,
   supportsFocusAssist,
   supportsKeepAwake,
   supportsWindowControls,
 } from "@/lib/platform";
+import { ISSUES_URL, RELEASES_URL, openExternal } from "@/lib/links";
 import { useAppTheme, type ThemePreference } from "@/lib/theme";
 import type { ClockFace } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -313,9 +315,9 @@ export default function SettingsPage() {
 
       <SectionCard
         title="数据管理"
-        hint={`计时记录、任务与模板都存在本机 SQLite 文件里，当前共 ${totalRecords} 条计时记录`}
+        hint={`记录、任务和模板都只存在这台设备上，目前共 ${totalRecords} 条计时记录`}
       >
-        <SettingRow title="导出完整备份" hint="包含记录、任务、模板与偏好设置，JSON 格式">
+        <SettingRow title="导出完整备份" hint="把记录、任务、模板和偏好设置存成一个文件，方便留档或换设备">
           <Button
             variant="secondary"
             isDisabled={exporting !== null}
@@ -325,7 +327,7 @@ export default function SettingsPage() {
             {exporting === "backup" ? "导出中" : "导出 JSON"}
           </Button>
         </SettingRow>
-        <SettingRow title="导出记录表" hint="CSV，可直接用 Excel 打开或做论文插图">
+        <SettingRow title="导出记录表" hint="导出成表格，可以直接用 Excel 打开查看或统计">
           <Button
             variant="secondary"
             isDisabled={exporting !== null}
@@ -349,34 +351,44 @@ export default function SettingsPage() {
       <Card.Root>
         <Card.Header className="flex flex-col gap-1">
           <span className="text-sm font-semibold text-foreground">关于与更新</span>
-          <span className="text-xs text-muted">
-            版本 {appVersion} · 更新包从 CDN 分发，装完自动重启到新版本
-          </span>
+          <span className="text-xs text-muted">青灯 {appVersion}</span>
         </Card.Header>
         <Card.Content className="flex flex-col gap-3 text-xs text-muted">
+          {supportsAutoUpdate() ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="min-w-0">
+                有新版本时会提示你，弹窗里会写清楚这次改了什么
+              </span>
+              <Button variant="secondary" isDisabled={checking} onPress={() => void checkUpdate()}>
+                <RefreshCw className={cn("size-4", checking && "animate-spin")} />
+                {checking ? "检查中" : "检查更新"}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-4">
+              <span className="min-w-0">有新版本时到发布页下载安装包覆盖安装即可升级</span>
+              <Button variant="secondary" onPress={() => void openExternal(RELEASES_URL)}>
+                <ExternalLink className="size-4" />
+                去下载新版本
+              </Button>
+            </div>
+          )}
+          {updateNotice ? <p className="break-all">{updateNotice}</p> : null}
+
           <div className="flex items-center justify-between gap-4">
-            <span className="min-w-0">
-              {supportsAutoUpdate()
-                ? "启动时自动检查更新，有新版本会弹窗列出更新内容"
-                : "Android 版由应用内提示下载安装包，覆盖安装即可升级"}
-            </span>
-            <Button variant="secondary" isDisabled={checking} onPress={() => void checkUpdate()}>
-              <RefreshCw className={cn("size-4", checking && "animate-spin")} />
-              {checking ? "检查中" : "检查更新"}
+            <span className="min-w-0">用得不顺手或有想法，欢迎到项目主页提一句</span>
+            <Button variant="secondary" onPress={() => void openExternal(ISSUES_URL)}>
+              <MessageSquare className="size-4" />
+              反馈问题
             </Button>
           </div>
-          {updateNotice ? <p className="break-all">{updateNotice}</p> : null}
-          <p>青灯 {appVersion} · Tauri + React + HeroUI + SQLite + bklit</p>
+
+          <p>所有记录只保存在这台设备上，不会上传到任何服务器，也不需要注册账号。</p>
           <p>
-            数据文件：
-            {isAndroid() ? "应用私有目录 / qingdeng.db" : "%APPDATA%\\com.qingdeng.app\\qingdeng.db"}
-          </p>
-          {isAndroid() ? null : (
-            <p>导出目录：%APPDATA%\com.qingdeng.app\exports</p>
-          )}
-          <p>
-            快捷键：
-            {isTouchPrimary() ? "轻点屏幕唤出控制栏" : "空格开始 / 暂停，Esc 退出沉浸模式"}
+            操作提示：
+            {isTouchPrimary()
+              ? "轻点屏幕唤出控制栏；「结束本段」会把已用时间计入统计"
+              : "空格开始 / 暂停，Esc 退出沉浸模式；计时中顶端一直显示当前时间"}
           </p>
         </Card.Content>
       </Card.Root>

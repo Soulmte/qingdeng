@@ -316,8 +316,9 @@ const checks: [string, boolean, string][] = [
   ],
   [
     "设置页不再有纯文本的设置行",
-    !settingsHtml.includes("已保存记录") && settingsHtml.includes("当前共"),
-    `已保存记录行=${settingsHtml.includes("已保存记录")}`,
+    // 旧的纯文本行叫「已保存记录」，现在记录条数写在数据管理卡片的说明里
+    !settingsHtml.includes("已保存记录") && settingsHtml.includes("条计时记录"),
+    `已保存记录行=${settingsHtml.includes("已保存记录")} 条数说明=${settingsHtml.includes("条计时记录")}`,
   ],
   [
     "计时页时钟按位数选择字号",
@@ -420,6 +421,14 @@ const checks: [string, boolean, string][] = [
     settingsHtml.includes("自动接续下一段") &&
       settingsHtml.includes("阶段结束后自动开始下一段"),
     `开关行=${settingsHtml.includes("自动接续下一段")}`,
+  ],
+  [
+    "设置页关于区面向使用者",
+    settingsHtml.includes("反馈问题") &&
+      settingsHtml.includes("不会上传到任何服务器") &&
+      !settingsHtml.includes("Tauri + React") &&
+      !settingsHtml.includes("%APPDATA%"),
+    `反馈=${settingsHtml.includes("反馈问题")} 技术栈=${settingsHtml.includes("Tauri + React")} 原始路径=${settingsHtml.includes("%APPDATA%")}`,
   ],
   [
     "清单里的更新说明能拆成列表",
