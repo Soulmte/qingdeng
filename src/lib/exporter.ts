@@ -65,7 +65,7 @@ export async function exportBackup() {
   return save(`qingdeng-backup-${timestamp()}.json`, JSON.stringify(payload, null, 2));
 }
 
-/** 导出记录表：给 Excel 或论文插图用 */
+/** 导出记录表：写成 CSV，可以直接用 Excel 打开 */
 export async function exportSessionsCsv() {
   if (!isDesktopRuntime()) throw new Error("导出功能仅在桌面应用内可用");
   const { sessions } = await dumpAll();
