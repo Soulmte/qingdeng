@@ -1,0 +1,320 @@
+/* shadcn 的命令行工具靠这一行识别 Tailwind 项目，Tailwind 自身会去重，保留不影响产物体积 */
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* HeroUI 组件的工具类由 tailwind-variants 在运行时产出，默认扫不到 node_modules，这里显式声明 */
+@source "../node_modules/@heroui/react/dist";
+
+/*
+ * 主题调色板：名字取自「青灯黄卷」，
+ * 所以主色用青（灯身），强调与休息用暖橙（灯火）。
+ * 未分层的变量优先级高于 HeroUI 的 layer(theme)，可以稳定覆盖。
+ */
+:root {
+  --accent: oklch(0.52 0.09 195);
+  --accent-foreground: oklch(0.99 0.005 195);
+
+  --lamp: oklch(0.45 0.085 195);
+  --lamp-strong: oklch(0.37 0.08 195);
+  --lamp-soft: oklch(0.95 0.025 195);
+  --flame: oklch(0.76 0.15 72);
+  --flame-core: oklch(0.93 0.07 85);
+
+  --ring-track: oklch(0.91 0.012 195);
+  --ring-focus: oklch(0.5 0.09 195);
+  --ring-break: oklch(0.74 0.14 72);
+
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: oklch(0.86 0.008 195);
+  --scrollbar-thumb-hover: oklch(0.72 0.03 195);
+
+  --chart-1: oklch(0.55 0.09 195);
+  --chart-2: oklch(0.76 0.15 72);
+  --chart-3: oklch(0.6 0.07 245);
+  --chart-4: oklch(0.66 0.09 150);
+  --chart-5: oklch(0.74 0.05 195);
+  --chart-background: oklch(1 0 0);
+  --chart-foreground: oklch(0.24 0.02 195);
+  --chart-foreground-muted: oklch(0.55 0.02 195);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: oklch(0.52 0.09 195);
+  --chart-grid: oklch(0.9 0.008 195);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: oklch(0.24 0.02 195 / 0.88);
+  --chart-tooltip-foreground: oklch(0.99 0.005 195);
+  --chart-tooltip-muted: oklch(0.78 0.02 195);
+  --chart-marker-background: oklch(0.97 0.01 195);
+  --chart-marker-border: oklch(0.85 0.02 195);
+  --chart-marker-foreground: oklch(0.32 0.03 195);
+  --chart-label: oklch(0.48 0.02 195);
+  --chart-scale-01: oklch(0.95 0.02 195);
+  --chart-scale-02: oklch(0.86 0.05 195);
+  --chart-scale-03: oklch(0.74 0.08 195);
+  --chart-scale-04: oklch(0.62 0.1 195);
+  --chart-scale-05: oklch(0.5 0.09 195);
+  --chart-scale-pattern-color: oklch(0.96 0.01 195);
+}
+
+.dark,
+[data-theme="dark"] {
+  --accent: oklch(0.74 0.1 195);
+  --accent-foreground: oklch(0.17 0.02 195);
+
+  --lamp: oklch(0.72 0.09 195);
+  --lamp-strong: oklch(0.82 0.08 195);
+  --lamp-soft: oklch(0.3 0.035 195);
+  --flame: oklch(0.83 0.14 72);
+  --flame-core: oklch(0.96 0.05 85);
+
+  --ring-track: oklch(0.32 0.022 195);
+  --ring-focus: oklch(0.76 0.1 195);
+  --ring-break: oklch(0.8 0.13 72);
+
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: oklch(0.36 0.01 195);
+  --scrollbar-thumb-hover: oklch(0.5 0.03 195);
+
+  --chart-1: oklch(0.74 0.1 195);
+  --chart-2: oklch(0.83 0.14 72);
+  --chart-3: oklch(0.72 0.08 245);
+  --chart-4: oklch(0.76 0.1 150);
+  --chart-5: oklch(0.6 0.06 195);
+  --chart-background: oklch(0.24 0.02 195);
+  --chart-foreground: oklch(0.94 0.01 195);
+  --chart-foreground-muted: oklch(0.72 0.02 195);
+  --chart-crosshair: oklch(0.76 0.1 195);
+  --chart-grid: oklch(0.34 0.015 195);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: oklch(0.3 0.02 195 / 0.92);
+  --chart-tooltip-foreground: oklch(0.98 0.005 195);
+  --chart-tooltip-muted: oklch(0.78 0.02 195);
+  --chart-marker-background: oklch(0.3 0.02 195);
+  --chart-marker-border: oklch(0.44 0.03 195);
+  --chart-marker-foreground: oklch(0.92 0.01 195);
+  --chart-label: oklch(0.74 0.02 195);
+  --chart-scale-01: oklch(0.3 0.03 195);
+  --chart-scale-02: oklch(0.38 0.05 195);
+  --chart-scale-03: oklch(0.48 0.07 195);
+  --chart-scale-04: oklch(0.6 0.09 195);
+  --chart-scale-05: oklch(0.72 0.1 195);
+  --chart-scale-pattern-color: oklch(0.24 0.02 195);
+}
+
+@theme inline {
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-background: var(--chart-background);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-label: var(--chart-label);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-ring-track: var(--ring-track);
+  --color-ring-focus: var(--ring-focus);
+  --color-ring-break: var(--ring-break);
+  --color-lamp: var(--lamp);
+  --color-lamp-strong: var(--lamp-strong);
+  --color-lamp-soft: var(--lamp-soft);
+  --color-flame: var(--flame);
+  --color-flame-core: var(--flame-core);
+}
+
+/*
+ * 表单字段可见性：HeroUI 的 input.css 读的是 --border-width-field，而变量文件里
+ * 定义的是 --field-border-width，两边对不上导致边框宽度失效；暗色下 --field-background
+ * 又与卡片同色，输入框看上去像一段普通文字。这里把字段填充和边框统一补齐。
+ */
+:root {
+  --border-width-field: 1px;
+  --field-border-width: 1px;
+  --field-background: oklch(0.995 0.002 195);
+  --field-border: oklch(0.24 0.02 195 / 0.22);
+  --field-foreground: oklch(0.2 0.02 195);
+  --field-placeholder: oklch(0.55 0.02 195);
+}
+
+.dark,
+[data-theme="dark"] {
+  --field-background: oklch(0.25 0.012 195);
+  --field-border: oklch(1 0 0 / 0.22);
+  --field-foreground: oklch(0.97 0.005 195);
+  --field-placeholder: oklch(0.68 0.015 195);
+}
+
+/* 计时数字统一用等宽 + 表格数字，避免秒数跳变时宽度抖动 */
+@utility clock-digits {
+  font-family: "Cascadia Mono", "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * 步进控件：HeroUI 给加减按钮各留 40px，输入框自己又有 px-3，
+ * 结果是窄面板里只剩不到一个字的宽度（30 会显示成 3）。
+ * 这里收窄按钮、压掉输入框内边距并居中数字，两位数三位数都能完整显示。
+ * HeroUI 的组件样式在 @layer components 里，未分层规则优先级更高。
+ */
+.number-field__group:has([slot="decrement"]):has([slot="increment"]) {
+  grid-template-columns: 2rem 1fr 2rem;
+}
+
+.number-field__group:has([slot="decrement"]):not(:has([slot="increment"])) {
+  grid-template-columns: 2rem 1fr;
+}
+
+.number-field__group:has([slot="increment"]):not(:has([slot="decrement"])) {
+  grid-template-columns: 1fr 2rem;
+}
+
+.number-field__input {
+  padding-inline: 0.25rem;
+  text-align: center;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/*
+ * 滚动条：细窄、内缩的圆角滑块，随主题换色。
+ * 注意：一旦设置 scrollbar-width / scrollbar-color，Chromium 会忽略 ::-webkit-scrollbar，
+ * 所以这里只用 webkit 伪元素，才能做出带内缩的圆角。
+ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * 触屏设备（Android 平板、手机）把可点区域放大到 44px 以上，
+ * 并给输入框更大的字号，手指点得准。
+ */
+@media (pointer: coarse) {
+  .button {
+    min-height: 2.75rem;
+  }
+
+  .button--sm {
+    min-height: 2.25rem;
+  }
+
+  .number-field__group {
+    height: 2.75rem;
+  }
+
+  .number-field__group:has([slot="decrement"]):has([slot="increment"]) {
+    grid-template-columns: 2.5rem 1fr 2.5rem;
+  }
+
+  .number-field__input,
+  .input {
+    font-size: 1rem;
+  }
+}
+
+/* 翻页钟：上半页向下折，下半页随后向下展开 */
+@keyframes flip-fold {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes flip-unfold {
+  from {
+    transform: rotateX(90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes immersive-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes lamp-flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
