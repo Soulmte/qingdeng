@@ -133,27 +133,19 @@ jobs:
             --artifact "cdn-assets/QingDeng_${version}_x64-setup.nsis.zip"
 
       # 国内直连 GitHub 下载很慢，所以把更新包再镜像一份到 cdn 分支，
-      # 客户端从 jsDelivr 拉（文件名带版本号，命中永久缓存）。
-      # 用独立的 GIT_DIR，不碰当前工作区。
+      # 客户端从 jsDelivr 拉（文件名带版本号，命中 jsDelivr 的永久缓存）。
+      # 推送逻辑见脚本：Android 作业是并行跑的，也会往同一个分支写 APK。
       - name: 镜像到 cdn 分支
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          export GIT_DIR="$RUNNER_TEMP/cdn.git" GIT_WORK_TREE="$RUNNER_TEMP/cdnws"
-          mkdir -p "$GIT_WORK_TREE"
-          git init -q
-          cd "$GIT_WORK_TREE"
-          git checkout -q --orphan cdn 2>/dev/null || true
-          cp "$GITHUB_WORKSPACE"/cdn-assets/* .
-          git add -A
-          git -c user.name="github-actions[bot]" \
-              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -q -m "Publish v${{ steps.version.outputs.version }} to CDN"
-          git push -q -f \
-            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" cdn
-          ls -l
+          bash scripts/push-to-cdn.sh \
+            --repo "${{ github.repository }}" \
+            --token "$GH_TOKEN" \
+            --message "Publish v${{ steps.version.outputs.version }} to CDN" \
+            cdn-assets/*
 
       # 分支引用在 jsDelivr 上会缓存，发版后主动刷一次，否则最多要等 12 小时
       - name: 刷新 jsDelivr 缓存
@@ -298,7 +290,6 @@ jobs:
           files: release-assets/QingDeng_*_arm64.apk
 
       # APK 不参与自动更新，但平板上要人工下载，同样镜像到 cdn 分支走 jsDelivr。
-      # 这里用 clone 而不是强推，否则会把上面那步写进去的安装包冲掉。
       - name: 把 APK 也镜像到 cdn 分支
         shell: bash
         env:
@@ -306,18 +297,12 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          work="$RUNNER_TEMP/cdnws"
-          rm -rf "$work"
-          git clone -q --depth 1 --branch cdn \
-            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" "$work"
-          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-            "$work/QingDeng_${version}_arm64.apk"
-          cd "$work"
-          git add -A
-          git -c user.name="github-actions[bot]" \
-              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -q -m "Add Android APK for v${version}"
-          git push -q origin cdn
+          # 上一步「整理 APK 名称」已经把它改名放进 release-assets
+          bash scripts/push-to-cdn.sh \
+            --repo "${{ github.repository }}" \
+            --token "$GH_TOKEN" \
+            --message "Add Android APK for v${version}" \
+            "release-assets/QingDeng_${version}_arm64.apk"
           echo "APK 已镜像：https://cdn.jsdelivr.net/gh/${{ github.repository }}@cdn/QingDeng_${version}_arm64.apk"
 
       # 同文件名重新发布会撞上下载缓存（实测会继续发旧包），所以也刷一次。
