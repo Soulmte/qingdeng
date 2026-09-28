@@ -235,13 +235,24 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: npm run tauri android build -- --apk
+        # 只出 arm64：模拟器用的 x86_64 体积翻几倍、交叉编译也慢好几倍，
+        # 而平板真机基本都是 arm64。需要全 ABI 时把 --target 去掉。
+        run: npm run tauri android build -- --apk --target aarch64
+
+      - name: 整理 APK 名称
+        shell: bash
+        run: |
+          version="${{ needs.windows.outputs.version }}"
+          mkdir -p release-assets
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
+            "release-assets/QingDeng_${version}_arm64.apk"
+          ls -l release-assets
 
       - name: 把 APK 挂到同一个 Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.windows.outputs.version }}
-          files: src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          files: release-assets/QingDeng_*_arm64.apk
 
       # APK 不参与自动更新，但平板上要人工下载，同样镜像到 cdn 分支走 jsDelivr。
       # 这里用 clone 而不是强推，否则会把上面那步写进去的安装包冲掉。
