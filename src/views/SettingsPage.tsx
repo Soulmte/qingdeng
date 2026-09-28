@@ -171,11 +171,11 @@ export default function SettingsPage() {
     <div className="flex max-w-3xl flex-col gap-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-foreground">设置</h1>
-        <p className="text-sm text-muted">偏好保存在本机数据库中，换设备不会同步</p>
+        <p className="text-sm text-muted">偏好只保存在这台设备上，换设备不会同步</p>
       </header>
 
       <SectionCard title="外观" hint="亮暗场景与时钟形态随时可切换">
-        <SettingRow title="主题模式" hint="答辩投影建议使用亮色场景">
+        <SettingRow title="主题模式" hint="投影或明亮环境下建议用亮色">
           <SegmentedControl<ThemePreference>
             value={preference}
             onChange={setTheme}

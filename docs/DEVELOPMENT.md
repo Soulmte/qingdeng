@@ -103,6 +103,17 @@ npm run check:interaction  # 交互：在 jsdom 里真的输入与点击，验�
 cd src-tauri && cargo run --example focus_probe
 ```
 
+README 里的界面截图由脚本生成，界面改动后可以重新跑一遍：
+
+```powershell
+# 先把应用打开，脚本会把窗口固定尺寸并依次点开五个页面截图
+powershell -ExecutionPolicy Bypass -File scripts\capture-window.ps1
+```
+
+两个踩过的坑写在脚本注释里：WebView2 是硬件合成渲染，普通 BitBlt 只能截到黑屏，
+必须用 `PrintWindow` 加 `PW_RENDERFULLCONTENT`；另外 PowerShell 默认不是 DPI 感知的，
+不先调 `SetProcessDPIAware` 会导致点击坐标被系统缩放一次，表现为“点偏一项 + 图被裁”。
+
 ## Android 平板版
 
 同一份前端产物同时跑在 Windows 桌面与 Android 平板上：布局按窗口宽度自适应，平台差异集中到 `src/lib/platform.ts` 一处判断，组件只问「有没有这个能力」，不自己判断平台。

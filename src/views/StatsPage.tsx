@@ -72,7 +72,7 @@ export default function StatsPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold text-foreground">专注统计</h1>
-          <p className="text-sm text-muted">所有数据都存在本机数据库里，只统计专注阶段</p>
+          <p className="text-sm text-muted">所有数据都只存在这台设备上，只统计专注阶段</p>
         </div>
         <SegmentedControl value={range} onChange={setRange} options={RANGE_OPTIONS} />
       </header>
@@ -179,7 +179,7 @@ export default function StatsPage() {
       <Card.Root>
         <Card.Header className="flex flex-col gap-1">
           <span className="text-sm font-semibold text-foreground">最近记录</span>
-          <span className="text-xs text-muted">只保留最近 12 条，完整数据在本地数据库中</span>
+          <span className="text-xs text-muted">只列出最近 12 条；更早的记录照样计入上面的统计</span>
         </Card.Header>
         <Card.Content>
           {recent.length === 0 ? (

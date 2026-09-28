@@ -103,7 +103,7 @@ export function PresetEditorDialog({
       onClose={onClose}
       layer={layer}
       title={preset && preset.id > 0 ? "编辑模板" : "新建模板"}
-      description="模板会保存在本地数据库中，可随时切换使用"
+      description="模板会保存在本机，可随时切换使用"
       className="max-w-xl"
       footer={
         <>
