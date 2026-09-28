@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>青灯 设备框</title>
+    <style>
+      /* 外层只当画布，所有布局都发生在 iframe 自己的视口里 */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        overflow: hidden;
+      }
+      iframe {
+        display: block;
+        border: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // ?w=390&h=844&scale=1&src=index.html%3Fpage%3Dtimer
+      const params = new URLSearchParams(location.search);
+      const width = Number(params.get("w") ?? 390);
+      const height = Number(params.get("h") ?? 844);
+      const scale = Number(params.get("scale") ?? 1);
+      const frame = document.createElement("iframe");
+      frame.width = String(width);
+      frame.height = String(height);
+      frame.src = params.get("src") ?? "index.html";
+      if (scale !== 1) {
+        frame.style.transform = `scale(${scale})`;
+        frame.style.transformOrigin = "top left";
+      }
+      document.body.appendChild(frame);
+    </script>
+  </body>
+</html>

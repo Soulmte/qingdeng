@@ -44,3 +44,10 @@ src-tauri/gen/android/build/
 src-tauri/gen/android/app/build/
 *.keystore
 *.jks
+
+# 设备预览工具的中间产物（probe.js / app.css / out 都是现场生成的）
+scripts/device-preview/probe.js
+scripts/device-preview/app.css
+scripts/device-preview/out/
+scripts/device-preview/sheet-*.html
+scripts/device-preview/site-*.html

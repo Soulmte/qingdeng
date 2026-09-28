@@ -23,7 +23,7 @@
 
 ## 下载与安装
 
-到 [Releases](https://github.com/Soulmte/qingdeng/releases/latest) 下载最新版。
+到 [下载页](https://soulmte.github.io/qingdeng/) 拿最新版（页面会自动填上最新版号与下载地址），也可以直接去 [Releases](https://github.com/Soulmte/qingdeng/releases/latest) 自己找。
 
 ### Windows
 
@@ -32,13 +32,16 @@
 - 支持 Windows 10 / 11（64 位），依赖系统自带的 WebView2（Win11 自带，Win10 一般也有）
 - 有新版本会自动提示，并在弹窗里列出更新内容，确认后自动下载安装
 
-### Android 平板
+### Android（手机与平板）
 
-下载 `QingDeng_<版本>_arm64.apk`，传到平板后点开安装。
+下载 `QingDeng_<版本>_arm64.apk`，传到设备后点开安装。
 
-- 需要 Android 7.0 及以上，且是 arm64 设备（绝大多数现代平板都是）
+- 需要 Android 7.0 及以上，且是 arm64 设备（绝大多数现代手机和平板都是）
 - 首次安装时系统会拦一下，需要在提示里允许「安装未知来源的应用」
-- 平板上的更新方式是下载新 APK 覆盖安装，没有应用内自动更新（系统不允许应用静默替换自己）
+- 更新方式是下载新 APK 覆盖安装，没有应用内自动更新（系统不允许应用静默替换自己）
+- 手机用底部导航，平板把导航收成左侧一条图标竖栏；计时数字按屏幕宽度缩放，横竖屏都不会顶出圆环
+
+![手机上的计时页](docs/images/phone.png)
 
 > 这个 APK 只包含 arm64 架构，装在电脑上的 Android 模拟器（通常是 x86_64）会提示不兼容。
 

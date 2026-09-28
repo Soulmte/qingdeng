@@ -1,0 +1,642 @@
+/*
+ * 青灯下载页样式。
+ *
+ * 配色与 src/index.css 是同一套（青=灯身，暖橙=灯火，米色=黄卷），
+ * 那边改了主色，这边要跟着改，所以刻意写成平铺的变量，方便对照。
+ *
+ * 底色选暖纸而不是深色：这是个计时器，多半在书桌前、灯开着的时候打开，
+ * 而且应用本身默认就是亮色。
+ */
+
+:root {
+  /* 纸与墨：所有中性色都往青的色相偏一点，避免出现纯灰 */
+  --paper: oklch(0.975 0.008 85);
+  --paper-deep: oklch(0.955 0.012 85);
+  --ink: oklch(0.24 0.02 195);
+  --ink-soft: oklch(0.46 0.016 195);
+  --hairline: oklch(0.865 0.012 85);
+
+  /* 灯 */
+  --accent: oklch(0.5 0.09 195);
+  --accent-deep: oklch(0.36 0.07 195);
+  --accent-soft: oklch(0.93 0.028 195);
+  --lamp: oklch(0.45 0.085 195);
+  --lamp-strong: oklch(0.37 0.08 195);
+  --flame: oklch(0.76 0.15 72);
+  --flame-core: oklch(0.93 0.07 85);
+
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas,
+    monospace;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  text-underline-offset: 0.25em;
+}
+
+a:hover {
+  text-decoration-color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: clamp(1.6rem, 3.4vw, 2.35rem);
+}
+
+p {
+  margin: 0;
+}
+
+/* 正文行长控制在 70 字左右，超过就不适合阅读了 */
+.lede,
+.band__lede,
+.row dd,
+.dl__meta p,
+.shot figcaption,
+.release__notes {
+  max-width: 42em;
+}
+
+/* ── 顶栏 ─────────────────────────────────────────────── */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.85rem clamp(1rem, 4vw, 3rem);
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+  backdrop-filter: blur(9px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.bar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.bar__nav {
+  display: flex;
+  gap: 1.6rem;
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.bar__nav a {
+  text-decoration: none;
+}
+
+.bar__nav a:hover {
+  color: var(--ink);
+}
+
+.lamp {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.lamp--small {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ── 按钮 ─────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    transform 0.18s var(--ease-out);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--solid {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.btn--solid:hover {
+  background: var(--accent-deep);
+}
+
+.btn--quiet {
+  border-color: var(--hairline);
+  color: var(--ink);
+}
+
+.btn--quiet:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 青绿色块上的按钮：底色当纸，字回到青 */
+.btn--paper {
+  background: var(--paper);
+  color: var(--accent-deep);
+}
+
+.btn--paper:hover {
+  background: #fff;
+}
+
+.btn--paper-outline {
+  border-color: color-mix(in oklab, var(--paper) 72%, transparent);
+  color: var(--paper);
+}
+
+.btn--paper-outline:hover {
+  border-color: var(--paper);
+}
+
+.btn--wide {
+  min-width: 16rem;
+  justify-content: space-between;
+}
+
+.btn__tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
+/* ── 首屏 ─────────────────────────────────────────────── */
+
+.hero {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 4vw, 3rem) clamp(2.5rem, 6vw, 5rem);
+  max-width: 78rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 60rem) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0.4rem 0 0.7rem;
+  /* 两个字的名字放到很大，是整页唯一一处这么大的字 */
+  font-size: clamp(3.4rem, 11vw, 6.5rem);
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.lede {
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  color: var(--ink-soft);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.hero__note {
+  margin-top: 1.1rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.hero__dial {
+  justify-self: center;
+  width: clamp(15rem, 26vw, 23rem);
+  animation: rise 0.9s var(--ease-out) both;
+}
+
+/* ── 表盘 ─────────────────────────────────────────────── */
+
+.dial {
+  width: 100%;
+  height: auto;
+}
+
+/* 刻度靠 stroke-dasharray 的短划线做成：60 格细的 + 12 格粗的，起始点都是 12 点方向 */
+.dial__minor {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 18;
+  opacity: 0.28;
+}
+
+.dial__major {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 18;
+  opacity: 0.6;
+}
+
+.dial__track {
+  fill: none;
+  stroke: var(--accent-soft);
+  stroke-width: 13;
+}
+
+.dial__arc {
+  fill: none;
+  stroke: url(#dial-arc);
+  stroke-width: 13;
+  stroke-linecap: round;
+  stroke-dasharray: 477.52;
+  /* 62% 进度：还剩 38% 没画 */
+  stroke-dashoffset: 181.46;
+}
+
+.dial__hair {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: 0.25;
+}
+
+.dial__bead-ring {
+  fill: var(--paper);
+}
+
+.dial__bead {
+  fill: var(--accent);
+}
+
+.dial__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  fill: var(--ink-soft);
+}
+
+.dial__time {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  fill: var(--ink);
+}
+
+.dial__sub {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--ink-soft);
+}
+
+/* ── 下载区（整页唯一一块实色青，用来把两个入口推出来） ── */
+
+.band {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.band__inner {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1rem, 4vw, 3rem);
+}
+
+.band__lede {
+  margin-top: 0.5rem;
+  color: color-mix(in oklab, var(--paper) 78%, transparent);
+}
+
+.dl {
+  margin-top: 2.25rem;
+}
+
+.dl__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.6rem 0;
+  border-top: 1px solid color-mix(in oklab, var(--paper) 28%, transparent);
+}
+
+.dl__meta h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.dl__meta p {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: color-mix(in oklab, var(--paper) 76%, transparent);
+}
+
+.dl__notes {
+  margin: 0.5rem 0 0;
+  padding: 1.4rem 0 0;
+  border-top: 1px solid color-mix(in oklab, var(--paper) 28%, transparent);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: color-mix(in oklab, var(--paper) 78%, transparent);
+}
+
+.dl__notes li::before {
+  content: "·";
+  margin-right: 0.6rem;
+}
+
+/* ── 它做什么 ─────────────────────────────────────────── */
+
+.how,
+.shots,
+.release {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: clamp(2.75rem, 6vw, 5rem) clamp(1rem, 4vw, 3rem);
+}
+
+.rows {
+  margin: 2.5rem 0 0;
+}
+
+.row {
+  display: grid;
+  gap: 0.4rem 2rem;
+  padding: 1.35rem 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.row:last-child {
+  border-bottom: 1px solid var(--hairline);
+}
+
+@media (min-width: 48rem) {
+  .row {
+    /* 标签窄、说明宽，行距拉开，不做成一张张卡片 */
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+}
+
+.row dt {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.row dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ── 界面截图 ─────────────────────────────────────────── */
+
+.shots {
+  /* 这一段底色压深一档，让截图浮出来，也把上下两段分开 */
+  background: var(--paper-deep);
+  max-width: none;
+  padding-inline: 0;
+}
+
+.shots > * {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+.shot {
+  margin: 2.5rem 0 0;
+}
+
+.shot img {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: 0.9rem;
+  box-shadow: 0 18px 40px -28px oklch(0.24 0.02 195 / 0.45);
+}
+
+.shot figcaption {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.shot__pair {
+  display: grid;
+  gap: 1.5rem 2rem;
+}
+
+@media (min-width: 48rem) {
+  .shot__pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 手机截图是竖的，单独收窄居中，不和宽屏截图挤在同一行 */
+.shot--phone {
+  margin-top: 3rem;
+}
+
+.shot--phone img {
+  width: 100%;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+.shot--phone figcaption {
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* ── 更新记录 ─────────────────────────────────────────── */
+
+.release__version {
+  margin-top: 1.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.release__version strong {
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.release__notes {
+  margin-top: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.release__notes h3 {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.release__notes h3:first-child {
+  margin-top: 0;
+}
+
+.release__notes ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: var(--ink-soft);
+}
+
+.release__notes li::before {
+  content: "·";
+  margin-right: 0.6rem;
+  color: var(--accent);
+}
+
+.release__fallback {
+  margin-top: 1.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* ── 页脚 ─────────────────────────────────────────────── */
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 2.5rem clamp(1rem, 4vw, 3rem) 3.5rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.foot__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 30rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.foot__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.foot__links a {
+  text-decoration: none;
+}
+
+.foot__links a:hover {
+  color: var(--accent);
+}
+
+/* ── 动效 ─────────────────────────────────────────────── */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* 顶栏在窄屏上收起中间那几个链接，只留下载入口 */
+@media (max-width: 47.99rem) {
+  .bar__nav {
+    display: none;
+  }
+
+  .bar .btn {
+    margin-left: auto;
+  }
+
+  /* 窄屏上把下载按钮撑满一行，手指好点 */
+  .btn--wide {
+    width: 100%;
+    min-width: 0;
+  }
+}

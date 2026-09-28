@@ -272,7 +272,8 @@ async function main() {
   record(
     "更新弹窗面板覆盖默认宽度到 max-w-2xl",
     Boolean(dialogPanel?.className.includes("max-w-2xl")) &&
-      !dialogPanel?.className.includes("max-w-md"),
+      Boolean(dialogPanel?.className.includes("dialog-sheet")) &&
+      Boolean(dialogPanel?.className.includes("rounded-t-2xl")),
     `面板类=${dialogPanel?.className ?? "未找到"}`,
   );
 

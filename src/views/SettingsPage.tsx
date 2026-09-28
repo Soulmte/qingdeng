@@ -27,7 +27,7 @@ import {
   supportsKeepAwake,
   supportsWindowControls,
 } from "@/lib/platform";
-import { ISSUES_URL, RELEASES_URL, openExternal } from "@/lib/links";
+import { DOWNLOAD_URL, ISSUES_URL, openExternal } from "@/lib/links";
 import { useAppTheme, type ThemePreference } from "@/lib/theme";
 import type { ClockFace } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -57,12 +57,13 @@ function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-6 py-3.5">
+    // 手机上一行放不下「标题 + 说明 + 控件」，改成上下排，控件在下面单独一行
+    <div className="flex flex-col gap-2.5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-sm font-medium text-foreground">{title}</span>
         {hint ? <span className="text-xs text-muted">{hint}</span> : null}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="sm:shrink-0">{children}</div>
     </div>
   );
 }
@@ -170,7 +171,7 @@ export default function SettingsPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-foreground">设置</h1>
+        <h1 className="text-lg font-semibold text-foreground sm:text-xl">设置</h1>
         <p className="text-sm text-muted">偏好只保存在这台设备上，换设备不会同步</p>
       </header>
 
@@ -199,7 +200,7 @@ export default function SettingsPage() {
             min={GOAL_MIN}
             max={GOAL_MAX}
             step={GOAL_STEP}
-            className="w-36"
+            className="w-full sm:w-36"
             onChange={(dailyGoalMinutes) => settings.update({ dailyGoalMinutes })}
           />
         </SettingRow>
@@ -355,29 +356,42 @@ export default function SettingsPage() {
         </Card.Header>
         <Card.Content className="flex flex-col gap-3 text-xs text-muted">
           {supportsAutoUpdate() ? (
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <span className="min-w-0">
                 有新版本时会提示你，弹窗里会写清楚这次改了什么
               </span>
-              <Button variant="secondary" isDisabled={checking} onPress={() => void checkUpdate()}>
+              <Button
+                variant="secondary"
+                className="w-full sm:w-auto"
+                isDisabled={checking}
+                onPress={() => void checkUpdate()}
+              >
                 <RefreshCw className={cn("size-4", checking && "animate-spin")} />
                 {checking ? "检查中" : "检查更新"}
               </Button>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-4">
-              <span className="min-w-0">有新版本时到发布页下载安装包覆盖安装即可升级</span>
-              <Button variant="secondary" onPress={() => void openExternal(RELEASES_URL)}>
+            <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <span className="min-w-0">有新版本时到下载页取新的安装包，覆盖安装即可升级</span>
+              <Button
+                variant="secondary"
+                className="w-full sm:w-auto"
+                onPress={() => void openExternal(DOWNLOAD_URL)}
+              >
                 <ExternalLink className="size-4" />
-                去下载新版本
+                打开下载页
               </Button>
             </div>
           )}
           {updateNotice ? <p className="break-all">{updateNotice}</p> : null}
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <span className="min-w-0">用得不顺手或有想法，欢迎到项目主页提一句</span>
-            <Button variant="secondary" onPress={() => void openExternal(ISSUES_URL)}>
+            <Button
+              variant="secondary"
+              className="w-full sm:w-auto"
+              onPress={() => void openExternal(ISSUES_URL)}
+            >
               <MessageSquare className="size-4" />
               反馈问题
             </Button>

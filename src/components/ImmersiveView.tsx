@@ -76,15 +76,15 @@ export function ImmersiveView() {
         !controlsVisible && "cursor-none",
       )}
     >
-      <header className="flex items-start justify-between gap-6 p-8">
+      <header className="flex items-start justify-between gap-4 p-5 sm:gap-6 sm:p-8">
         <div className={cn("flex flex-col gap-0.5", alwaysShowClock ? "opacity-100" : chromeClass)}>
-          <span className="clock-digits text-4xl font-semibold text-foreground">
+          <span className="clock-digits text-3xl font-semibold text-foreground sm:text-4xl">
             {formatTimeOfDay(now, true)}
           </span>
           <span className="text-sm text-muted">{formatDateLabel(now)}</span>
         </div>
 
-        <div className={cn("flex items-center gap-3", chromeClass)}>
+        <div className={cn("flex items-center gap-2.5 sm:gap-3", chromeClass)}>
           <Chip color="accent">{presetName}</Chip>
           <Button variant="secondary" isIconOnly aria-label="退出沉浸模式" onPress={exit}>
             <Minimize2 className="size-4" />
@@ -92,16 +92,21 @@ export function ImmersiveView() {
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8 px-10">
+      <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-5 sm:gap-8 sm:px-10">
         <ClockFaceView face={clockFace} size="lg" {...clock} />
         {taskName ? (
-          <p className="max-w-[520px] truncate text-lg text-muted">{taskName}</p>
+          <p className="max-w-[520px] truncate text-base text-muted sm:text-lg">{taskName}</p>
         ) : (
-          <p className="text-lg text-muted">{STATUS_HINTS[status]}</p>
+          <p className="text-base text-muted sm:text-lg">{STATUS_HINTS[status]}</p>
         )}
       </main>
 
-      <footer className={cn("flex flex-col items-center gap-3 pb-10", chromeClass)}>
+      <footer
+        className={cn(
+          "flex flex-col items-center gap-3 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-10 sm:pb-10",
+          chromeClass,
+        )}
+      >
         <TimerControls variant="immersive" />
         <span className="text-xs text-muted">
           {isTouchPrimary() ? "轻点屏幕唤出控制栏" : "按 Esc 或右上角按钮退出沉浸模式"}

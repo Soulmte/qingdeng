@@ -1,0 +1,44 @@
+name: 发布下载页
+
+# site/ 是手写的静态页，不需要构建，直接整目录发到 GitHub Pages。
+# 只在 site/ 变化时跑，避免每次改代码都重新部署一遍。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+# 部署 Pages 需要写权限与 OIDC
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同时只跑一个，两次部署撞上会互相覆盖
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: 部署到 GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # enablement: 仓库还没开 Pages 时自动打开，省得手动去设置里点
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

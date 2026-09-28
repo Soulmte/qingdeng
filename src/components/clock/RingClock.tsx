@@ -25,8 +25,10 @@ const BEAD_INNER = STROKE * 0.26;
 const BEAD_OUTER = STROKE * 0.44;
 
 const CONTAINER_CLASSES = {
-  md: "max-w-[min(520px,46vh)]",
-  lg: "max-w-[min(760px,62vh)]",
+  // 尺寸按高度收，但给一个宽度下限：手机横屏时视口很矮，
+  // 只按 vh 会挤成一个读不出数字的小圆圈
+  md: "min-w-[180px] max-w-[min(520px,44vh)]",
+  lg: "min-w-[220px] max-w-[min(760px,62vh)]",
 };
 
 /** 圆环钟：外圈表示阶段进度，正计时时改为一分钟一圈 */
@@ -56,7 +58,7 @@ export function RingClock({
   const showBead = clamped > 0.004 && clamped < 0.999;
 
   return (
-    <div className={cn("relative aspect-square w-full", CONTAINER_CLASSES[size])}>
+    <div className={cn("clock-box relative aspect-square w-full", CONTAINER_CLASSES[size])}>
       <svg viewBox={`0 0 ${VIEW_BOX} ${VIEW_BOX}`} className="size-full -rotate-90">
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -149,7 +151,7 @@ export function RingClock({
         <span
           className={cn(
             "clock-digits font-semibold leading-none text-foreground",
-            clockTextClass("ring", size, text),
+            clockTextClass("ring", text),
           )}
         >
           {text}

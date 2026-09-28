@@ -7,8 +7,8 @@ import { useSettingsStore } from "@/stores/settingsStore";
 const MAX_LAMPS = 8;
 
 interface TodaySummaryProps {
-  /** full 用于侧边栏，compact 用于平板与手机的顶栏 */
-  variant?: "full" | "compact";
+  /** full 用于侧边栏，compact 用于平板与桌面的顶栏，strip 用于手机顶栏下面那条 */
+  variant?: "full" | "compact" | "strip";
 }
 
 export function TodaySummary({ variant = "full" }: TodaySummaryProps) {
@@ -21,17 +21,39 @@ export function TodaySummary({ variant = "full" }: TodaySummaryProps) {
   const lit = Math.min(completedRounds, slots);
   const overflow = completedRounds - lit;
 
+  const lamps = (
+    <span className="flex items-center gap-0.5" aria-hidden>
+      {Array.from({ length: slots }, (_, index) => (
+        <LampUnit key={index} lit={index < lit} className="size-3.5 shrink-0" />
+      ))}
+    </span>
+  );
+
+  const lampCount = (
+    <span className="text-xs font-medium text-foreground">
+      {completedRounds} 盏{overflow > 0 ? ` +${overflow}` : ""}
+    </span>
+  );
+
+  if (variant === "strip") {
+    return (
+      <div className="flex items-center justify-between gap-3 border-b border-foreground/10 px-4 py-2 md:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          {lamps}
+          {lampCount}
+        </div>
+        <span className="clock-digits shrink-0 text-xs text-muted">
+          <span className="text-sm font-semibold text-foreground">{focusMinutes}</span>/{goal} 分钟
+        </span>
+      </div>
+    );
+  }
+
   if (variant === "compact") {
     return (
       <div className="flex items-center gap-2 rounded-full bg-default px-3 py-1.5">
-        <span className="flex items-center gap-0.5" aria-hidden>
-          {Array.from({ length: slots }, (_, index) => (
-            <LampUnit key={index} lit={index < lit} className="size-3.5 shrink-0" />
-          ))}
-        </span>
-        <span className="text-xs font-medium text-foreground">
-          {completedRounds} 盏{overflow > 0 ? ` +${overflow}` : ""}
-        </span>
+        {lamps}
+        {lampCount}
         <span className="clock-digits text-xs text-muted">
           {focusMinutes}/{goal}
         </span>

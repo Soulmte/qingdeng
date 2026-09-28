@@ -37,37 +37,51 @@ export default function TimerPage() {
   const [taskPickerOpen, setTaskPickerOpen] = useState(false);
 
   return (
-    <div className="flex min-h-full flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onPress={() => setTemplatesOpen(true)}>
-            <LayoutGrid className="size-4" />
-            {preset.name}
-            <ChevronDown className="size-4" />
+    <div className="flex min-h-full flex-col gap-5 md:gap-6">
+      {/*
+        手机上标题栏折成两行：第一行两个入口按钮平分宽度，
+        第二行是轮次指示与时钟形态，否则三个按钮 + 轮次点会挤成三行。
+      */}
+      <header className="flex flex-col gap-2.5 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-5">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            className="min-w-0 flex-1 md:flex-none"
+            onPress={() => setTemplatesOpen(true)}
+          >
+            <LayoutGrid className="size-4 shrink-0" />
+            <span className="truncate">{preset.name}</span>
+            <ChevronDown className="size-4 shrink-0" />
           </Button>
 
-          <Button variant="outline" onPress={() => setTaskPickerOpen(true)}>
-            <Target className={cn("size-4", taskId !== null && "text-accent")} />
-            <span className={cn("max-w-[200px] truncate", !taskName && "text-muted")}>
+          <Button
+            variant="outline"
+            className="min-w-0 flex-1 md:flex-none"
+            onPress={() => setTaskPickerOpen(true)}
+          >
+            <Target className={cn("size-4 shrink-0", taskId !== null && "text-accent")} />
+            <span className={cn("truncate md:max-w-[200px]", !taskName && "text-muted")}>
               {taskName || "关联任务"}
             </span>
-            <ChevronDown className="size-4" />
+            <ChevronDown className="size-4 shrink-0" />
           </Button>
-
-          <RoundTrack />
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <span className="text-xs text-muted">时钟形态</span>
-          <SegmentedControl<ClockFace>
-            value={clockFace}
-            onChange={(face) => updateSettings({ clockFace: face })}
-            options={FACE_OPTIONS}
-          />
+        <div className="flex items-center justify-between gap-3 md:flex-col md:items-end md:gap-2">
+          <RoundTrack />
+          <div className="flex items-center gap-2">
+            <span className="hidden text-xs text-muted md:inline">时钟形态</span>
+            <SegmentedControl<ClockFace>
+              value={clockFace}
+              onChange={(face) => updateSettings({ clockFace: face })}
+              options={FACE_OPTIONS}
+              compact
+            />
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 py-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 py-2 md:gap-8 md:py-4">
         <ClockFaceView face={clockFace} {...clock} />
         <TimerControls />
       </div>

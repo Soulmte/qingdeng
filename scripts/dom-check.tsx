@@ -10,7 +10,7 @@
  */
 import "./desktop-env";
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { Legend, LegendItem, LegendLabel, LegendMarker, LegendValue } from "@/components/charts";
@@ -212,6 +212,15 @@ const beadRadii = quarterRadii.slice(-2);
 const beadCx = num(attrValues(rings.quarter, "cx").at(-1));
 const beadCy = num(attrValues(rings.quarter, "cy").at(-1));
 
+/** 图标栏那一段标记，用来确认它里面只有图标 */
+const railHtml = shellHtml.slice(
+  shellHtml.indexOf("nav-rail"),
+  shellHtml.indexOf("</aside>", shellHtml.indexOf("nav-rail")),
+);
+
+// 导航与弹层的形态由 index.css 决定，这几条断言盯的是那份样式表
+const shellCss = readFileSync("src/index.css", "utf8");
+
 /** 去掉标签后的纯文本，便于断言被标签拆开的文案（如 0 与 /120 分钟） */
 const textOf = (html: string) => html.replace(/<[^>]*>/g, "");
 
@@ -368,23 +377,23 @@ const checks: [string, boolean, string][] = [
   ],
   [
     "计时页时钟按位数选择字号",
-    rings.long.includes("10:00:00") && rings.long.includes("text-5xl"),
+    rings.long.includes("10:00:00") && rings.long.includes("text-[9.2cqw]"),
     `长时长显示 10:00:00=${rings.long.includes("10:00:00")}`,
   ],
   [
-    "长时长圆环使用 text-5xl",
-    rings.long.includes("text-5xl"),
-    `text-5xl=${rings.long.includes("text-5xl")}`,
+    "圆环字号按容器比例而不是固定档位",
+    // 字号的单位是 cqw，容器再窄也不会顶出圆环；分三档：≤5 位、6-7 位、8 位以上
+    rings.short.includes("text-[14cqw]") &&
+      rings.long.includes("text-[9.2cqw]") &&
+      rings.short.includes("clock-box") &&
+      rings.long.includes("clock-box"),
+    `短=${rings.short.includes("text-[14cqw]")} 长=${rings.long.includes("text-[9.2cqw]")}`,
   ],
   [
-    "短时长圆环使用 text-7xl",
-    rings.short.includes("text-7xl"),
-    `text-7xl=${rings.short.includes("text-7xl")}`,
-  ],
-  [
-    "圆环容器宽度放大到 520px",
-    rings.short.includes("max-w-[min(520px,46vh)]"),
-    `max-w=${rings.short.includes("max-w-[min(520px,46vh)]")}`,
+    "圆环容器留了宽度下限",
+    // 手机横屏视口很矮，只按 vh 算会挤成一个读不出数字的小圆圈
+    rings.short.includes("max-w-[min(520px,44vh)]") && rings.short.includes("min-w-[180px]"),
+    `max-w=${rings.short.includes("max-w-[min(520px,44vh)]")}`,
   ],
   [
     "圆环画满 60 格刻度并按 6° 均分",
@@ -457,8 +466,8 @@ const checks: [string, boolean, string][] = [
   ],
   [
     "今日进度用青灯灯位表示",
-    // 侧边栏（full）与顶栏（compact）各 5 盏，静态 HTML 里两份都在
-    count(shellHtml, "M4.4 16.2h15.2") === 10 && textOf(shellHtml).includes("0/120 分钟"),
+    // 侧边栏（full）、顶栏（compact）、手机那条（strip）各 5 盏，静态 HTML 里三份都在
+    count(shellHtml, "M4.4 16.2h15.2") === 15 && textOf(shellHtml).includes("0/120 分钟"),
     `灯位数=${count(shellHtml, "M4.4 16.2h15.2")}`,
   ],
   [
@@ -467,12 +476,29 @@ const checks: [string, boolean, string][] = [
     `紧凑进度=${shellHtml.includes("rounded-full bg-default")}`,
   ],
   [
-    "导航按宽度切成侧边栏 / 图标栏 / 底栏三种形态",
-    shellHtml.includes("w-56 shrink-0") &&
-      shellHtml.includes("w-[76px]") &&
+    "导航按指针类型与宽度切成侧边栏 / 图标栏 / 底栏",
+    shellHtml.includes("nav-sidebar") &&
+      shellHtml.includes("nav-rail") &&
+      shellHtml.includes("nav-bottom") &&
       shellHtml.includes("fixed inset-x-0 bottom-0") &&
       shellHtml.includes("env(safe-area-inset-bottom)"),
-    `侧边栏=${shellHtml.includes("w-56 shrink-0")} 图标栏=${shellHtml.includes("w-[76px]")} 底栏=${shellHtml.includes("fixed inset-x-0 bottom-0")}`,
+    `侧边栏=${shellHtml.includes("nav-sidebar")} 图标栏=${shellHtml.includes("nav-rail")} 底栏=${shellHtml.includes("nav-bottom")}`,
+  ],
+  [
+    "平板与窄屏的图标栏只留图标，不做两行",
+    // 图标栏里不能再出现竖排的文字标签，否则又变回「图标 + 文字」的宽栏
+    railHtml.length > 0 &&
+      !railHtml.includes("text-[0.7rem]") &&
+      count(railHtml, "<a ") === 5 &&
+      railHtml.includes('aria-label="任务"'),
+    `图标栏链接=${count(railHtml, "<a ")} 含文字=${railHtml.includes("text-[0.7rem]")}`,
+  ],
+  [
+    "手机顶栏下面单独一条今日进度",
+    // 手机上顶栏放不下灯位，单独一条细带放在顶栏下面，宽屏与侧边栏形态下隐藏
+    shellHtml.includes("border-b border-foreground/10 px-4 py-2 md:hidden") &&
+      count(shellHtml, "今日点亮") === 1,
+    `今日进度带=${shellHtml.includes("border-b border-foreground/10 px-4 py-2 md:hidden")}`,
   ],
   [
     "桌面端保留全部平台能力",
@@ -526,6 +552,24 @@ const checks: [string, boolean, string][] = [
       parseNotes("## 改进")[0].text === "改进" &&
       parseNotes("- 一条")[0].heading === false,
     JSON.stringify(parseNotes("# 青灯 v0.2.1\n## 改进")),
+  ],
+  [
+    "触屏设备不会看到桌面侧边栏",
+    // 侧边栏只在「鼠标设备」下显示，安卓平板横屏普遍超过 1024px，只按宽度判断会落到桌面布局
+    shellCss.includes("html:not(.touch-ui) .nav-sidebar") && shellCss.includes("touch-ui"),
+    `含 touch-ui 守卫=${shellCss.includes("html:not(.touch-ui) .nav-sidebar")}`,
+  ],
+  [
+    "手机上的弹窗贴底铺满",
+    shellCss.includes(".dialog-sheet") &&
+      shellCss.includes("width < 40rem") &&
+      shellCss.includes("max-width: 100%"),
+    `dialog-sheet=${shellCss.includes(".dialog-sheet")}`,
+  ],
+  [
+    "时钟字号按容器比例，不依赖窗口宽度",
+    shellCss.includes("container-type: inline-size") && shellCss.includes(".clock-box"),
+    `clock-box=${shellCss.includes(".clock-box")}`,
   ],
   [
     "设置页不再出现毕业设计字样",

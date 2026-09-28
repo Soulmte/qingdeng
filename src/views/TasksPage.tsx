@@ -57,32 +57,33 @@ export default function TasksPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-2 sm:gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold text-foreground">任务清单</h1>
+          <h1 className="text-lg font-semibold text-foreground sm:text-xl">任务清单</h1>
           <p className="text-sm text-muted">
             写下要做的事与预估段数，关联计时后进度会自动累计
           </p>
         </div>
-        <span className="text-sm text-muted">
+        <span className="text-xs text-muted sm:text-sm">
           进行中 {openTasks.length} 项 · 已完成 {finishedRounds} / {plannedRounds} 段
         </span>
       </header>
 
-      {/* 添加栏：一整行，回车即保存 */}
-      <div className="flex flex-row flex-wrap items-center gap-3 rounded-field border border-foreground/10 bg-surface p-3">
+      {/* 添加栏：宽屏排成一行回车即保存；手机竖着排，添加按钮占满宽度好点 */}
+      <div className="flex flex-col gap-2.5 rounded-field border border-foreground/10 bg-surface p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <Input
           value={title}
           maxLength={40}
           aria-label="任务标题"
           placeholder="添加一个任务，回车即可保存"
-          className="min-w-[240px] flex-1"
+          className="w-full sm:min-w-[240px] sm:flex-1"
           onChange={(event) => setTitle(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") void addQuick();
           }}
         />
-        <div className="flex flex-row items-center gap-2">
+        {/* sm 以上把这一层“化开”，让里面的控件回到外层同一行 */}
+        <div className="flex items-center gap-2 sm:contents">
           <span className="text-xs text-muted">预估</span>
           <NumberStepper
             ariaLabel="预估段数"
@@ -94,7 +95,12 @@ export default function TasksPage() {
           />
           <span className="text-xs text-muted">段</span>
         </div>
-        <Button variant="primary" isDisabled={!title.trim() || creating} onPress={addQuick}>
+        <Button
+          variant="primary"
+          className="w-full sm:w-auto"
+          isDisabled={!title.trim() || creating}
+          onPress={addQuick}
+        >
           <Plus className="size-4" />
           添加
         </Button>

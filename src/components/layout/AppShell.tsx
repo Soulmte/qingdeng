@@ -19,10 +19,14 @@ const NAV_ITEMS = [
 ];
 
 /**
- * 三种导航形态：
- * - lg 及以上（桌面、平板横屏）：完整侧边栏
- * - md（平板竖屏）：图标栏
- * - md 以下（手机）：底部导航
+ * 三种导航形态，由 index.css 里的 .nav-* 按「指针类型 + 宽度」决定显示哪一个：
+ *
+ *            <768px        768px 以上
+ *   触屏     底栏          图标栏
+ *   鼠标     底栏          图标栏（≥1024px 换成完整侧边栏）
+ *
+ * 关键一条：触屏设备永远不用 224px 的桌面侧边栏。安卓平板横屏普遍在 1280px 以上，
+ * 只看宽度会直接落到桌面布局，整页看上去就变成了一套后台管理系统。
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const now = useNow(1000);
@@ -32,7 +36,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-full bg-background text-foreground">
-      <aside className="hidden w-56 shrink-0 flex-col gap-6 border-r border-foreground/10 bg-surface px-4 py-6 lg:flex">
+      {/* 桌面宽屏：完整侧边栏 */}
+      <aside className="nav-sidebar w-56 shrink-0 flex-col gap-6 border-r border-foreground/10 bg-surface px-4 py-6">
         <div className="flex items-center gap-2.5 px-2">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lamp-soft">
             <BrandMark className="size-7" pulse />
@@ -67,8 +72,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <TodaySummary />
       </aside>
 
-      <aside className="hidden w-[76px] shrink-0 flex-col items-center gap-5 border-r border-foreground/10 bg-surface py-5 md:flex lg:hidden">
-        <span className="flex size-11 items-center justify-center rounded-xl bg-lamp-soft">
+      {/*
+        中等宽度与触屏平板：只留图标的竖栏。
+        触屏上没有 hover，所以补 title 不给提示，靠图标本身和底部的文字版导航区分，
+        触控目标给到 48px，手指点得准。
+      */}
+      <aside className="nav-rail w-[84px] shrink-0 flex-col items-center gap-4 border-r border-foreground/10 bg-surface py-5">
+        <span className="flex size-11 items-center justify-center rounded-2xl bg-lamp-soft">
           <BrandMark className="size-7" pulse />
         </span>
         <nav className="flex flex-1 flex-col items-center gap-2">
@@ -81,37 +91,43 @@ export function AppShell({ children }: { children: ReactNode }) {
               title={item.label}
               className={({ isActive }) =>
                 cn(
-                  "flex size-11 items-center justify-center rounded-field transition-colors",
-                  isActive ? "bg-accent-soft text-accent" : "text-muted hover:bg-default",
+                  "flex size-12 items-center justify-center rounded-field transition-colors",
+                  isActive
+                    ? "bg-accent-soft text-accent"
+                    : "text-muted hover:bg-default active:bg-default",
                 )
               }
             >
-              <item.icon className="size-5" />
+              <item.icon className="size-[22px]" />
             </NavLink>
           ))}
         </nav>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-foreground/10 px-4 py-3 md:px-6 lg:px-8 lg:py-4">
+        <header className="flex items-center justify-between gap-3 border-b border-foreground/10 px-4 py-2.5 md:px-6 md:py-3 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex items-center gap-2 lg:hidden">
-              <BrandMark className="size-6 md:hidden" />
+            {/* 品牌只在底栏形态下进顶栏；侧边栏与 tab 栏里都有标识 */}
+            <span className="flex items-center gap-2 md:hidden">
+              <BrandMark className="size-6" />
               <span className="text-sm font-semibold">青灯</span>
             </span>
-            <span className="hidden text-sm text-muted lg:inline">{formatDateLabel(now)}</span>
+            <span className="hidden text-sm text-muted md:inline">{formatDateLabel(now)}</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:block lg:hidden">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <span className="today-compact">
               <TodaySummary variant="compact" />
             </span>
-            <span className="clock-digits text-xl font-semibold lg:text-2xl">
+            <span className="clock-digits text-xl font-semibold md:text-2xl">
               {formatTimeOfDay(now, true)}
             </span>
             <ThemeToggle />
           </div>
         </header>
+
+        {/* 手机上顶栏放不下灯位，改成顶栏下面一条细带 */}
+        <TodaySummary variant="strip" />
 
         {error ? (
           <div className="border-b border-danger/30 bg-danger-soft px-4 py-2 text-xs text-danger md:px-6 lg:px-8">
@@ -119,12 +135,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         ) : null}
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-24 md:px-6 md:py-5 md:pb-8 lg:px-8 lg:py-6">
+        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-6 md:py-5 md:pb-8 lg:px-8 lg:py-6">
           {children}
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t border-foreground/10 bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="nav-bottom fixed inset-x-0 bottom-0 z-20 items-stretch border-t border-foreground/10 bg-surface pb-[env(safe-area-inset-bottom)]">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.to}
@@ -132,13 +148,24 @@ export function AppShell({ children }: { children: ReactNode }) {
             end={item.to === "/"}
             className={({ isActive }) =>
               cn(
-                "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 pt-2 pb-1.5 transition-colors",
                 isActive ? "text-accent" : "text-muted",
               )
             }
           >
-            <item.icon className="size-5" />
-            <span className="text-[0.65rem] font-medium">{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <span
+                  className={cn(
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                    isActive && "bg-accent-soft",
+                  )}
+                >
+                  <item.icon className="size-5" />
+                </span>
+                <span className="text-[0.7rem] font-medium">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

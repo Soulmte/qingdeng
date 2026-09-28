@@ -67,9 +67,9 @@ export default function ModesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-2 sm:gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold text-foreground">计时模式</h1>
+          <h1 className="text-lg font-semibold text-foreground sm:text-xl">计时模式</h1>
           <p className="text-sm text-muted">
             考试模式、学习休息等常用方案已内置，也可以按自己的节奏新建模板
           </p>
@@ -80,7 +80,7 @@ export default function ModesPage() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {presets.map((preset) => {
           const active = preset.id === currentPreset.id;
           return (
@@ -133,7 +133,7 @@ export default function ModesPage() {
                 </div>
               </Card.Content>
 
-              <Card.Footer className="flex-wrap gap-2">
+              <Card.Footer className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                 <Button size="sm" variant="primary" onPress={() => applyPreset(preset)}>
                   <Play className="size-4" />
                   使用

@@ -210,12 +210,100 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-user-select: none;
   user-select: none;
+  /* 安卓 WebView 里下拖会露出上半页并能触发下拉刷新，这两种手感都不像原生应用 */
+  overscroll-behavior: none;
+  /* 默认的灰色高亮和自绘的按压态叠在一起，会显得脏 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 input,
 textarea {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/*
+ * 时钟容器：圆环、翻页、常态三种形态的文字大小都用 cqw 表示，
+ * 于是“字会不会顶出圆环”不再依赖窗口宽度，320px 手机到 4K 都是一样的比例。
+ * 没有容器上下文时 cqw 会退化到视口，所以这个声明必须真的生效。
+ */
+.clock-box {
+  container-type: inline-size;
+}
+
+/*
+ * 导航形态。两个轴决定用哪一种：
+ *   ① 指针类型：触屏设备（安卓平板、手机）永远不用 224px 的桌面侧边栏
+ *   ② 可用宽度
+ *
+ *             <768px        768px 以上
+ *   触屏      底栏          图标栏
+ *   鼠标      底栏          图标栏（≥1024px 换成完整侧边栏）
+ *
+ * 为什么把 ① 放在宽度前面：安卓平板横屏通常在 1280px 以上，
+ * 只按宽度判断会直接撞到桌面侧边栏——“像管理系统”就是这么来的。
+ * 图标栏不做「图标 + 文字」两行，只留图标；底栏因为要占一整条，才带文字。
+ * touch-ui 由 platform.ts 在首屏渲染前挂到 <html> 上。
+ */
+.nav-sidebar,
+.nav-rail {
+  display: none;
+}
+
+.nav-bottom {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .nav-bottom {
+    display: none;
+  }
+
+  .nav-rail {
+    display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* 鼠标设备换回完整侧边栏；触屏继续用图标栏 */
+  html:not(.touch-ui) .nav-rail {
+    display: none;
+  }
+
+  html:not(.touch-ui) .nav-sidebar {
+    display: flex;
+  }
+}
+
+/*
+ * 手机竖屏下弹层贴底铺满，宽屏再回到调用方传的 max-w-*。
+ * 用未分层规则是因为 max-w-2xl 这类工具类也在 @layer utilities 里，
+ * 未分层优先，不必去和 Tailwind 的变体顺序搏斗。
+ */
+@media (width < 40rem) {
+  .dialog-sheet {
+    max-width: 100%;
+  }
+}
+
+/*
+ * 今日进度在顶栏的紧凑形态。侧边栏自己有完整的一张卡片，
+ * 所以只有“鼠标设备且宽度足够”时才需要把它藏起来。
+ */
+.today-compact {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .today-compact {
+    display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  html:not(.touch-ui) .today-compact {
+    display: none;
+  }
 }
 
 /*
@@ -271,6 +359,11 @@ textarea {
   .number-field__input,
   .input {
     font-size: 1rem;
+  }
+
+  /* 分段切换的选项是原生 button，不吃 .button 的尺寸，单独抬到 40px */
+  [role="radiogroup"] > [role="radio"] {
+    min-height: 2.5rem;
   }
 }
 

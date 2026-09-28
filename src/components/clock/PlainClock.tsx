@@ -11,15 +11,15 @@ export function PlainClock({ ms, progress, label, sublabel, countup, size = "md"
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center gap-7",
-        size === "lg" ? "max-w-[880px]" : "max-w-[640px]",
+        "clock-box flex w-full flex-col items-center gap-6 sm:gap-7",
+        size === "lg" ? "max-w-[min(880px,100%)]" : "max-w-[min(640px,100%)]",
       )}
     >
       <span className="text-xs font-medium tracking-[0.3em] text-muted uppercase">{label}</span>
       <span
         className={cn(
           "clock-digits font-semibold leading-none text-foreground",
-          clockTextClass("plain", size, text),
+          clockTextClass("plain", text),
         )}
       >
         {text}
@@ -30,7 +30,7 @@ export function PlainClock({ ms, progress, label, sublabel, countup, size = "md"
           style={{ width: `${countup ? 100 : percent}%` }}
         />
       </div>
-      {sublabel ? <span className="text-sm text-muted">{sublabel}</span> : null}
+      {sublabel ? <span className="text-center text-sm text-muted">{sublabel}</span> : null}
     </div>
   );
 }

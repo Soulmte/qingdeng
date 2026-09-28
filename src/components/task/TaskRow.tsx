@@ -63,7 +63,7 @@ export function TaskRow({
           ) : null}
         </div>
 
-        <span className="clock-digits shrink-0 text-sm text-muted">
+        <span className="clock-digits shrink-0 text-xs text-muted sm:text-sm">
           {task.doneRounds} / {task.estimateRounds} 段
         </span>
       </div>
@@ -74,7 +74,8 @@ export function TaskRow({
         </ProgressBar.Track>
       </ProgressBar>
 
-      <div className="flex flex-wrap gap-1.5">
+      {/* 手机上一行放不下四个文字按钮，改成两列铺满，手指也好点 */}
+      <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
         {!done && onSetCurrent && !isCurrent ? (
           <Button size="sm" variant="primary" isDisabled={disabled} onPress={() => onSetCurrent(task)}>
             <Play className="size-3.5" />

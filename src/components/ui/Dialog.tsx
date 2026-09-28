@@ -45,7 +45,8 @@ export function Dialog({
   const overlay = (
     <div
       className={cn(
-        "fixed inset-0 flex items-center justify-center p-6",
+        // 手机上贴底展开，像系统里的面板；宽屏回到居中卡片
+        "fixed inset-0 flex items-end justify-center sm:items-center sm:p-6",
         layer === 2 ? "z-60" : "z-50",
       )}
     >
@@ -55,10 +56,18 @@ export function Dialog({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative flex max-h-full w-full max-w-md animate-[immersive-enter_160ms_ease-out] flex-col gap-4 overflow-y-auto rounded-2xl border border-foreground/5 bg-surface p-6 shadow-2xl",
+          // 默认 max-w-md 会被调用方传的 max-w-* 覆盖（cn 走 twMerge）；
+          // 手机竖屏再铺满，那一条放在 index.css 的 .dialog-sheet 里，
+          // 因为要用未分层规则才能稳定盖住同层的 max-w 工具类。
+          "dialog-sheet relative flex max-h-[92dvh] w-full max-w-md animate-[immersive-enter_160ms_ease-out] flex-col gap-4 overflow-y-auto rounded-t-2xl border border-foreground/5 bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-full sm:rounded-2xl sm:p-6 sm:pb-6",
           className,
         )}
       >
+        {/* 手机上贴底时给一条提起的提示，让人知道可以往下拖回去 */}
+        <span
+          aria-hidden
+          className="mx-auto h-1 w-10 shrink-0 rounded-full bg-foreground/15 sm:hidden"
+        />
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-base font-semibold text-foreground">{title}</h2>

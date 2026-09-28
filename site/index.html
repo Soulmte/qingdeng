@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>青灯 · 一个只管计时的专注工具</title>
+    <meta
+      name="description"
+      content="青灯是一个专注计时器：圆环、翻页、常态三种时钟，专注与休息自动接续，随时结束本段并计入统计。记录只存在本机。Windows 与 Android 均可下载。"
+    />
+    <link rel="icon" href="./img/icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="bar__brand" href="./">
+        <svg class="lamp" viewBox="0 0 128 128" aria-hidden="true">
+          <path
+            d="M64 19c7.6 12.2 12.4 21 12.4 28.6 0 7.4-5.6 12.8-12.4 12.8s-12.4-5.4-12.4-12.8C51.6 40 56.4 31.2 64 19Z"
+            fill="var(--flame)"
+          />
+          <path
+            d="M64 32c3.7 6 6 10.3 6 14 0 3.6-2.7 6.3-6 6.3s-6-2.7-6-6.3c0-3.7 2.3-8 6-14Z"
+            fill="var(--flame-core)"
+          />
+          <path d="M64 57v8" stroke="var(--flame)" stroke-width="2.6" stroke-linecap="round" />
+          <path d="M30 70c0 10.6 15.2 19 34 19s34-8.4 34-19Z" fill="var(--lamp)" />
+          <ellipse cx="64" cy="70" rx="34" ry="6.4" fill="var(--lamp-strong)" />
+          <path d="M59.5 88.5h9v5.5h-9z" fill="var(--lamp-strong)" />
+          <path d="M53 94h22l4.5 7.5h-31z" fill="var(--lamp)" />
+          <rect x="43" y="101.5" width="42" height="5.5" rx="2.75" fill="var(--lamp-strong)" />
+        </svg>
+        <span>青灯</span>
+      </a>
+      <nav class="bar__nav">
+        <a href="#how">它做什么</a>
+        <a href="#shots">界面</a>
+        <a href="#release">更新记录</a>
+        <a href="https://github.com/Soulmte/qingdeng">源码</a>
+      </nav>
+      <a class="btn btn--quiet" href="#download">下载</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero__copy">
+          <p class="eyebrow">Windows 与 Android · 免费 · 无需注册</p>
+          <h1>青灯</h1>
+          <p class="lede">
+            把时间切成一段一段，一段一段地亮起来。青灯只做一件事：替你数着这段时间，
+            并且记住你已经点亮的每一盏。
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--solid" href="#download">下载青灯</a>
+            <a class="btn btn--quiet" href="#how">先看看它做什么</a>
+          </div>
+          <p class="hero__note">记录只写在这台设备上，不注册、不上传，也不需要联网。</p>
+        </div>
+
+        <!-- 表盘用 stroke-dasharray 画出 60 格刻度，与应用的圆环钟是同一套构造：
+             外圈刻度、表壳发丝线、内圈轨道、渐变进度弧，弧头一个跟着走的光点。
+             弧长取 62%，光点落在弧的末端（<g> 里的坐标是旋转前的，跟着刻度一起转）。 -->
+        <div class="hero__dial" aria-hidden="true">
+          <svg class="dial" viewBox="0 0 240 240">
+            <defs>
+              <linearGradient id="dial-arc" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.45" />
+                <stop offset="100%" stop-color="var(--accent)" />
+              </linearGradient>
+            </defs>
+            <g transform="rotate(-90 120 120)">
+              <circle class="dial__minor" cx="120" cy="120" r="98" stroke-dasharray="2.2 8.0625" />
+              <circle class="dial__major" cx="120" cy="120" r="98" stroke-dasharray="4.6 46.7125" />
+              <circle class="dial__track" cx="120" cy="120" r="76" />
+              <circle class="dial__arc" cx="120" cy="120" r="76" />
+              <circle class="dial__bead-ring" cx="64.48" cy="68.1" r="4.6" />
+              <circle class="dial__bead" cx="64.48" cy="68.1" r="2.6" />
+            </g>
+            <circle class="dial__hair" cx="120" cy="120" r="62" />
+            <text class="dial__label" x="120" y="108" text-anchor="middle">专注</text>
+            <text class="dial__time" x="120" y="138" text-anchor="middle">17:00</text>
+            <text class="dial__sub" x="120" y="159" text-anchor="middle">第 2 / 4 轮</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="band" id="download">
+        <div class="band__inner">
+          <h2>下载</h2>
+          <p class="band__lede">
+            两个平台的记录格式一致，桌面版导出的完整备份可以拿到安卓上留档。
+          </p>
+
+          <div class="dl">
+            <div class="dl__row">
+              <div class="dl__meta">
+                <h3>Windows</h3>
+                <p>Windows 10 / 11 64 位。双击安装，不需要额外装运行库。</p>
+              </div>
+              <a
+                class="btn btn--paper btn--wide"
+                id="dl-windows"
+                href="https://github.com/Soulmte/qingdeng/releases/latest"
+              >
+                下载 Windows 安装包
+                <span class="btn__tag" id="dl-windows-tag">.exe</span>
+              </a>
+            </div>
+
+            <div class="dl__row">
+              <div class="dl__meta">
+                <h3>Android</h3>
+                <p>
+                  安卓 7.0 及以上，arm64。下载后点开安装，系统会问一次是否允许安装未知来源的应用。
+                </p>
+              </div>
+              <a
+                class="btn btn--paper-outline btn--wide"
+                id="dl-android"
+                href="https://github.com/Soulmte/qingdeng/releases/latest"
+              >
+                下载 Android 安装包
+                <span class="btn__tag" id="dl-android-tag">.apk</span>
+              </a>
+            </div>
+
+            <ul class="dl__notes">
+              <li>安装包已经过签名，覆盖安装不会丢掉已有记录。</li>
+              <li>桌面版装好后有新版本会自己提示；安卓版需要下载新的 APK 覆盖安装。</li>
+              <li id="dl-version">正在读取最新版本…</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="how" id="how">
+        <h2>它做什么</h2>
+        <dl class="rows">
+          <div class="row">
+            <dt>三种时钟</dt>
+            <dd>
+              圆环、翻页、常态倒计时，随时可换。圆环外圈是刻度，进度弧上带一个跟着走的光点。
+            </dd>
+          </div>
+          <div class="row">
+            <dt>自动接续</dt>
+            <dd>
+              专注与休息首尾相接，不用每轮重新点开始。想自己掌握节奏时，也可以在设置里关掉。
+            </dd>
+          </div>
+          <div class="row">
+            <dt>结束本段</dt>
+            <dd>
+              不必等整轮跑完。随时按「结束本段」，已经用掉的时间会照实计入统计，然后接续下一段。
+            </dd>
+          </div>
+          <div class="row">
+            <dt>灯位与统计</dt>
+            <dd>
+              今天点亮了几盏青灯、每天专注多少分钟、完成多少段，都按你自己的记录算，并且只统计专注阶段。
+            </dd>
+          </div>
+          <div class="row">
+            <dt>任务</dt>
+            <dd>给任务估个段数，关联计时后进度会自己往上走，不用手动加减。</dd>
+          </div>
+          <div class="row">
+            <dt>只存本机</dt>
+            <dd>
+              记录写在这台设备的 SQLite 文件里，不注册、不上传、不联网。可以一键导出备份或表格。
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="shots" id="shots">
+        <h2>界面</h2>
+        <figure class="shot shot--wide">
+          <img
+            src="./img/timer.png"
+            alt="计时页：圆环钟显示剩余时间，下面是开始、结束本段与沉浸模式按钮"
+          />
+          <figcaption>计时页。左栏按今天点亮的灯数算进度，顶栏是现在几点。</figcaption>
+        </figure>
+        <div class="shot__pair">
+          <figure class="shot">
+            <img src="./img/stats.png" alt="统计页：每日专注时长柱状图与模板占比环形图" />
+            <figcaption>统计页。每日时长、完成段数、模板占比。</figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="./img/modes.png" alt="计时模式页：五个内置模板卡片" />
+            <figcaption>计时模式。五种内置节奏，也可以按自己的节奏新建。</figcaption>
+          </figure>
+        </div>
+
+        <figure class="shot shot--phone">
+          <img src="./img/phone.png" alt="手机上的计时页：顶栏下面一条今日进度，底部是五个入口的导航" />
+          <figcaption>
+            手机上换成底部导航，平板上收成一条图标竖栏，计时数字随屏幕宽度缩放，不会顶出圆环。
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="release" id="release">
+        <h2>更新记录</h2>
+        <p class="release__version" id="release-version">正在读取最新版本…</p>
+        <div class="release__notes" id="release-notes"></div>
+        <p class="release__fallback">
+          每个版本的完整说明和校验文件都在
+          <a href="https://github.com/Soulmte/qingdeng/releases">发布页</a>。
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="foot__brand">
+        <svg class="lamp lamp--small" viewBox="0 0 128 128" aria-hidden="true">
+          <path
+            d="M64 19c7.6 12.2 12.4 21 12.4 28.6 0 7.4-5.6 12.8-12.4 12.8s-12.4-5.4-12.4-12.8C51.6 40 56.4 31.2 64 19Z"
+            fill="var(--flame)"
+          />
+          <path d="M64 57v8" stroke="var(--flame)" stroke-width="2.6" stroke-linecap="round" />
+          <path d="M30 70c0 10.6 15.2 19 34 19s34-8.4 34-19Z" fill="var(--lamp)" />
+          <ellipse cx="64" cy="70" rx="34" ry="6.4" fill="var(--lamp-strong)" />
+          <rect x="43" y="101.5" width="42" height="5.5" rx="2.75" fill="var(--lamp-strong)" />
+        </svg>
+        <p>名字取自「青灯黄卷」。记录保存在本机，不需要账号。</p>
+      </div>
+      <nav class="foot__links">
+        <a href="https://github.com/Soulmte/qingdeng">源码</a>
+        <a href="https://github.com/Soulmte/qingdeng/issues">反馈问题</a>
+        <a href="https://github.com/Soulmte/qingdeng/blob/main/LICENSE">MIT 许可</a>
+        <a href="https://github.com/Soulmte/qingdeng/releases">全部版本</a>
+      </nav>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

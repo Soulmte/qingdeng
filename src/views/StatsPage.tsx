@@ -69,9 +69,9 @@ export default function StatsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-2 sm:gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold text-foreground">专注统计</h1>
+          <h1 className="text-lg font-semibold text-foreground sm:text-xl">专注统计</h1>
           <p className="text-sm text-muted">所有数据都只存在这台设备上，只统计专注阶段</p>
         </div>
         <SegmentedControl value={range} onChange={setRange} options={RANGE_OPTIONS} />
@@ -105,7 +105,15 @@ export default function StatsPage() {
           </span>
         </Card.Header>
         <Card.Content>
-          <BarChart data={daily} xDataKey="label" aspectRatio="3 / 1" barGap={0.35} margin={CHART_MARGIN}>
+          {/* 手机上 3:1 的高度只剩不到 40px，柱子和 Y 轴标签会挤成一团，给个最小高度 */}
+          <BarChart
+            data={daily}
+            xDataKey="label"
+            aspectRatio="3 / 1"
+            barGap={0.35}
+            margin={CHART_MARGIN}
+            className="min-h-[200px] md:min-h-0"
+          >
             <Grid horizontal />
             <Bar dataKey="minutes" fill="var(--chart-1)" lineCap="round" />
             <YAxis numTicks={4} orientation="left" />
@@ -185,41 +193,76 @@ export default function StatsPage() {
           {recent.length === 0 ? (
             <p className="text-sm text-muted">还没有计时记录，回到计时页开始第一段专注吧。</p>
           ) : (
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="text-left text-xs text-muted">
-                  <th className="pb-2 font-medium">结束时间</th>
-                  <th className="pb-2 font-medium">任务</th>
-                  <th className="pb-2 font-medium">模板</th>
-                  <th className="pb-2 font-medium">阶段</th>
-                  <th className="pb-2 font-medium">时长</th>
-                  <th className="pb-2 font-medium">状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((record) => (
-                  <tr key={record.id} className="border-t border-foreground/10">
-                    <td className="clock-digits py-2 text-muted">
+            <div className="flex flex-col gap-2.5 md:hidden">
+              {recent.map((record) => (
+                <div
+                  key={record.id}
+                  className="flex flex-col gap-1.5 rounded-field border border-foreground/10 bg-surface p-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="clock-digits text-xs text-muted">
                       {formatRecordTime(record.endedAt)}
-                    </td>
-                    <td className="max-w-[220px] truncate py-2 text-foreground">
-                      {record.task || "—"}
-                    </td>
-                    <td className="py-2 text-muted">{record.presetName}</td>
-                    <td className="py-2 text-muted">{PHASE_LABELS[record.phase]}</td>
-                    <td className="clock-digits py-2 text-foreground">
+                    </span>
+                    <Chip size="sm" color={record.completed === 1 ? "success" : "default"}>
+                      {record.completed === 1 ? "已完成" : "已中断"}
+                    </Chip>
+                  </div>
+                  <span className="truncate text-sm text-foreground">
+                    {record.task || "未关联任务"}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-muted">
+                    <span className="truncate">{record.presetName}</span>
+                    <span aria-hidden>·</span>
+                    <span className="shrink-0">{PHASE_LABELS[record.phase]}</span>
+                    <span aria-hidden>·</span>
+                    <span className="clock-digits shrink-0 text-foreground">
                       {formatClock(record.actualSeconds * 1000)}
-                    </td>
-                    <td className="py-2">
-                      <Chip size="sm" color={record.completed === 1 ? "success" : "default"}>
-                        {record.completed === 1 ? "已完成" : "已中断"}
-                      </Chip>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
+
+          {/* 宽屏用表格看列对齐，手机换成上面那种卡片，六个列挤不下 */}
+          {recent.length > 0 ? (
+            <div className="hidden md:block">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted">
+                    <th className="pb-2 font-medium">结束时间</th>
+                    <th className="pb-2 font-medium">任务</th>
+                    <th className="pb-2 font-medium">模板</th>
+                    <th className="pb-2 font-medium">阶段</th>
+                    <th className="pb-2 font-medium">时长</th>
+                    <th className="pb-2 font-medium">状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.map((record) => (
+                    <tr key={record.id} className="border-t border-foreground/10">
+                      <td className="clock-digits py-2 text-muted">
+                        {formatRecordTime(record.endedAt)}
+                      </td>
+                      <td className="max-w-[220px] truncate py-2 text-foreground">
+                        {record.task || "未关联任务"}
+                      </td>
+                      <td className="py-2 text-muted">{record.presetName}</td>
+                      <td className="py-2 text-muted">{PHASE_LABELS[record.phase]}</td>
+                      <td className="clock-digits py-2 text-foreground">
+                        {formatClock(record.actualSeconds * 1000)}
+                      </td>
+                      <td className="py-2">
+                        <Chip size="sm" color={record.completed === 1 ? "success" : "default"}>
+                          {record.completed === 1 ? "已完成" : "已中断"}
+                        </Chip>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </Card.Content>
       </Card.Root>
 

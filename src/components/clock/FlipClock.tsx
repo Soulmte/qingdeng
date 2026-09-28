@@ -1,15 +1,18 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { splitClock } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import type { ClockSize, ClockViewProps } from "./types";
+import type { ClockViewProps } from "./types";
 
 const FLIP_DURATION_MS = 380;
 const FOLD_MS = 160;
 
-const SIZE_CLASSES: Record<ClockSize, string> = {
-  md: "h-24 w-16 text-6xl",
-  lg: "h-40 w-28 text-8xl",
-};
+/**
+ * 卡片尺寸与字号都按容器宽度取比例，与圆环、常态钟保持一致的一套做法，
+ * 位数多的时长和窄屏都不会把一行数字撑出屏幕。
+ * 高度取宽度的 1.5 倍，是原本 h-24 / w-16 的比例。
+ */
+const CARD_CLASSES = "h-[18cqw] w-[12cqw] text-[11.25cqw]";
+const COLON_CLASSES = "mx-[2cqw] text-[7cqw]";
 
 function Half({
   value,
@@ -24,7 +27,7 @@ function Half({
     <div
       className={cn(
         "absolute inset-x-0 h-1/2 overflow-hidden bg-surface",
-        side === "top" ? "top-0 rounded-t-xl" : "bottom-0 rounded-b-xl",
+        side === "top" ? "top-0 rounded-t-lg" : "bottom-0 rounded-b-lg",
       )}
       style={style}
     >
@@ -41,7 +44,7 @@ function Half({
 }
 
 /** 单个翻页数字：上半页向下折走，下半页随后翻上来 */
-function FlipDigit({ value, size }: { value: string; size: ClockSize }) {
+function FlipDigit({ value }: { value: string }) {
   const [state, setState] = useState({ current: value, previous: value, flipping: false });
 
   useEffect(() => {
@@ -62,11 +65,11 @@ function FlipDigit({ value, size }: { value: string; size: ClockSize }) {
   const { current, previous, flipping } = state;
 
   return (
-    <div className="mx-0.5" style={{ perspective: "760px" }}>
+    <div className="mx-[0.5cqw]" style={{ perspective: "760px" }}>
       <div
         className={cn(
-          "relative rounded-xl border border-foreground/5 bg-surface shadow-md",
-          SIZE_CLASSES[size],
+          "relative rounded-lg border border-foreground/5 bg-surface shadow-md",
+          CARD_CLASSES,
         )}
       >
         <Half value={current} side="top" />
@@ -106,10 +109,14 @@ function FlipDigit({ value, size }: { value: string; size: ClockSize }) {
 /** 翻页钟：每位数字一张卡片，靠 CSS 3D 折叠还原翻页手感 */
 export function FlipClock({ ms, label, sublabel, tone, size = "md" }: ClockViewProps) {
   const { text } = splitClock(ms);
-  const large = size === "lg";
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div
+      className={cn(
+        "clock-box flex w-full flex-col items-center gap-6",
+        size === "lg" ? "max-w-[min(880px,100%)]" : "max-w-[min(640px,100%)]",
+      )}
+    >
       <span className="text-xs font-medium tracking-[0.3em] text-muted uppercase">{label}</span>
       <div className="flex items-center">
         {text.split("").map((char, index) =>
@@ -119,17 +126,17 @@ export function FlipClock({ ms, label, sublabel, tone, size = "md" }: ClockViewP
               className={cn(
                 "clock-digits",
                 tone === "focus" ? "text-accent" : "text-ring-break",
-                large ? "mx-3 text-6xl" : "mx-2 text-4xl",
+                COLON_CLASSES,
               )}
             >
               :
             </span>
           ) : (
-            <FlipDigit key={`digit-${index}`} value={char} size={size} />
+            <FlipDigit key={`digit-${index}`} value={char} />
           ),
         )}
       </div>
-      {sublabel ? <span className="text-sm text-muted">{sublabel}</span> : null}
+      {sublabel ? <span className="text-center text-sm text-muted">{sublabel}</span> : null}
     </div>
   );
 }

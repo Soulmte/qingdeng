@@ -12,6 +12,8 @@ interface SegmentedControlProps<T extends string> {
   options: SegmentedOption<T>[];
   onChange: (value: T) => void;
   disabled?: boolean;
+  /** 窄屏只留图标：手机上三个带文字的选项会占掉一整行 */
+  compact?: boolean;
   className?: string;
 }
 
@@ -21,6 +23,7 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
   disabled,
+  compact,
   className,
 }: SegmentedControlProps<T>) {
   return (
@@ -41,6 +44,7 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            aria-label={option.label}
             disabled={disabled}
             onClick={() => onChange(option.value)}
             className={cn(
@@ -51,7 +55,7 @@ export function SegmentedControl<T extends string>({
             )}
           >
             {Icon ? <Icon className="size-4" aria-hidden /> : null}
-            {option.label}
+            <span className={cn(compact && "hidden sm:inline")}>{option.label}</span>
           </button>
         );
       })}
