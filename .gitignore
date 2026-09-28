@@ -51,3 +51,8 @@ scripts/device-preview/app.css
 scripts/device-preview/out/
 scripts/device-preview/sheet-*.html
 scripts/device-preview/site-*.html
+scripts/device-preview/single-*.html
+
+# Python 缓存
+__pycache__/
+*.pyc

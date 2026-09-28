@@ -33,9 +33,8 @@
         <span>青灯</span>
       </a>
       <nav class="bar__nav">
+        <a href="#look">界面</a>
         <a href="#how">它做什么</a>
-        <a href="#shots">界面</a>
-        <a href="#release">更新记录</a>
         <a href="https://github.com/Soulmte/qingdeng">源码</a>
       </nav>
       <a class="btn btn--quiet" href="#download">下载</a>
@@ -51,15 +50,13 @@
             并且记住你已经点亮的每一盏。
           </p>
           <div class="hero__actions">
-            <a class="btn btn--solid" href="#download">下载青灯</a>
-            <a class="btn btn--quiet" href="#how">先看看它做什么</a>
+            <a class="btn btn--solid" href="#download">前往下载</a>
+            <a class="btn btn--quiet" href="#look">看看界面</a>
           </div>
           <p class="hero__note">记录只写在这台设备上，不注册、不上传，也不需要联网。</p>
         </div>
 
-        <!-- 表盘用 stroke-dasharray 画出 60 格刻度，与应用的圆环钟是同一套构造：
-             外圈刻度、表壳发丝线、内圈轨道、渐变进度弧，弧头一个跟着走的光点。
-             弧长取 62%，光点落在弧的末端（<g> 里的坐标是旋转前的，跟着刻度一起转）。 -->
+        <!-- 表盘用 stroke-dasharray 画出 60 格刻度，与应用里的圆环钟是同一套构造 -->
         <div class="hero__dial" aria-hidden="true">
           <svg class="dial" viewBox="0 0 240 240">
             <defs>
@@ -84,51 +81,98 @@
         </div>
       </section>
 
-      <section class="band" id="download">
-        <div class="band__inner">
-          <h2>下载</h2>
-          <p class="band__lede">
-            两个平台的记录格式一致，桌面版导出的完整备份可以拿到安卓上留档。
-          </p>
+      <section class="download" id="download">
+        <div class="panel">
+          <div class="panel__head">
+            <h2>下载</h2>
+            <p>两个平台的记录格式一致，桌面版导出的完整备份可以拿到手机上留档。</p>
+          </div>
 
           <div class="dl">
             <div class="dl__row">
               <div class="dl__meta">
                 <h3>Windows</h3>
-                <p>Windows 10 / 11 64 位。双击安装，不需要额外装运行库。</p>
+                <p>Windows 10 / 11 64 位。双击安装，不需要另外装运行库。</p>
               </div>
               <a
                 class="btn btn--paper btn--wide"
                 id="dl-windows"
                 href="https://github.com/Soulmte/qingdeng/releases/latest"
               >
-                下载 Windows 安装包
-                <span class="btn__tag" id="dl-windows-tag">.exe</span>
+                <span>下载 Windows 版</span>
+                <span class="btn__tag">.exe</span>
               </a>
             </div>
 
             <div class="dl__row">
               <div class="dl__meta">
                 <h3>Android</h3>
-                <p>
-                  安卓 7.0 及以上，arm64。下载后点开安装，系统会问一次是否允许安装未知来源的应用。
-                </p>
+                <p>安卓 7.0 及以上，arm64。下载后点开安装，系统会问一次是否允许安装未知来源的应用。</p>
               </div>
               <a
-                class="btn btn--paper-outline btn--wide"
+                class="btn btn--paper-line btn--wide"
                 id="dl-android"
                 href="https://github.com/Soulmte/qingdeng/releases/latest"
               >
-                下载 Android 安装包
-                <span class="btn__tag" id="dl-android-tag">.apk</span>
+                <span>下载 Android 版</span>
+                <span class="btn__tag">.apk</span>
               </a>
             </div>
+          </div>
 
-            <ul class="dl__notes">
-              <li>安装包已经过签名，覆盖安装不会丢掉已有记录。</li>
-              <li>桌面版装好后有新版本会自己提示；安卓版需要下载新的 APK 覆盖安装。</li>
-              <li id="dl-version">正在读取最新版本…</li>
-            </ul>
+          <div class="panel__foot">
+            <p class="panel__version" id="dl-version">正在读取最新版本…</p>
+            <p>安装包已签名，覆盖安装不会丢掉已有记录。桌面版装好后会自己提示新版本，安卓版下载新的 APK 覆盖安装即可。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="look" id="look">
+        <h2>界面</h2>
+
+        <!-- 一张大窗口打底，后面三张统一比例的细节特写，最后是一台手机 -->
+        <figure class="window">
+          <div class="window__frame">
+            <img src="./img/window.png" alt="计时页：左侧导航、中间的圆环计时、下方的控制条" />
+          </div>
+          <figcaption>计时页。左栏按今天点亮的灯数算进度，圆环外圈是 60 格刻度。</figcaption>
+        </figure>
+
+        <div class="details">
+          <figure class="detail">
+            <div class="detail__frame">
+              <img src="./img/dial.png" alt="圆环钟特写：进度弧末端有一个光点" />
+            </div>
+            <figcaption>进度弧上带一个跟着走的光点，走到哪儿一眼就知道。</figcaption>
+          </figure>
+          <figure class="detail">
+            <div class="detail__frame">
+              <img src="./img/task.png" alt="任务清单特写：任务卡片与进度条" />
+            </div>
+            <figcaption>给任务估个段数，关联计时后进度会自己往上走。</figcaption>
+          </figure>
+          <figure class="detail">
+            <div class="detail__frame">
+              <img src="./img/chart.png" alt="统计页特写：每日专注时长柱状图" />
+            </div>
+            <figcaption>每日时长、完成段数、模板占比，都按你自己的记录算。</figcaption>
+          </figure>
+        </div>
+
+        <div class="mobile">
+          <div class="mobile__copy">
+            <h3>手机与平板</h3>
+            <p>
+              手机上换成底部导航，平板上收成左侧一条图标竖栏，都不会挡住计时那一眼。
+              计时数字随屏幕宽度缩放，横屏竖屏都不会顶出圆环。
+            </p>
+            <p>
+              手机上单手就够得着：开始、结束本段、暂停都在拇指那一侧；统计里的记录换成卡片，
+              不用在窄屏上读一张六列的表格。
+            </p>
+          </div>
+          <div class="device">
+            <img src="./img/phone.png" alt="手机上的计时页：顶栏下面一条今日进度，底部五个入口" />
           </div>
         </div>
       </section>
@@ -138,77 +182,25 @@
         <dl class="rows">
           <div class="row">
             <dt>三种时钟</dt>
-            <dd>
-              圆环、翻页、常态倒计时，随时可换。圆环外圈是刻度，进度弧上带一个跟着走的光点。
-            </dd>
+            <dd>圆环、翻页、常态倒计时，随时可换。</dd>
           </div>
           <div class="row">
             <dt>自动接续</dt>
-            <dd>
-              专注与休息首尾相接，不用每轮重新点开始。想自己掌握节奏时，也可以在设置里关掉。
-            </dd>
+            <dd>专注与休息首尾相接，不用每轮重新点开始。想自己掌握节奏时，也可以在设置里关掉。</dd>
           </div>
           <div class="row">
             <dt>结束本段</dt>
-            <dd>
-              不必等整轮跑完。随时按「结束本段」，已经用掉的时间会照实计入统计，然后接续下一段。
-            </dd>
+            <dd>不必等整轮跑完。随时按「结束本段」，已经用掉的时间会照实计入统计，然后接续下一段。</dd>
           </div>
           <div class="row">
             <dt>灯位与统计</dt>
-            <dd>
-              今天点亮了几盏青灯、每天专注多少分钟、完成多少段，都按你自己的记录算，并且只统计专注阶段。
-            </dd>
-          </div>
-          <div class="row">
-            <dt>任务</dt>
-            <dd>给任务估个段数，关联计时后进度会自己往上走，不用手动加减。</dd>
+            <dd>今天点亮了几盏青灯、每天专注多少分钟、完成多少段，都只统计专注阶段。</dd>
           </div>
           <div class="row">
             <dt>只存本机</dt>
-            <dd>
-              记录写在这台设备的 SQLite 文件里，不注册、不上传、不联网。可以一键导出备份或表格。
-            </dd>
+            <dd>记录写在这台设备的 SQLite 文件里，不注册、不上传、不联网。可以一键导出备份或表格。</dd>
           </div>
         </dl>
-      </section>
-
-      <section class="shots" id="shots">
-        <h2>界面</h2>
-        <figure class="shot shot--wide">
-          <img
-            src="./img/timer.png"
-            alt="计时页：圆环钟显示剩余时间，下面是开始、结束本段与沉浸模式按钮"
-          />
-          <figcaption>计时页。左栏按今天点亮的灯数算进度，顶栏是现在几点。</figcaption>
-        </figure>
-        <div class="shot__pair">
-          <figure class="shot">
-            <img src="./img/stats.png" alt="统计页：每日专注时长柱状图与模板占比环形图" />
-            <figcaption>统计页。每日时长、完成段数、模板占比。</figcaption>
-          </figure>
-          <figure class="shot">
-            <img src="./img/modes.png" alt="计时模式页：五个内置模板卡片" />
-            <figcaption>计时模式。五种内置节奏，也可以按自己的节奏新建。</figcaption>
-          </figure>
-        </div>
-
-        <figure class="shot shot--phone">
-          <img src="./img/phone.png" alt="手机上的计时页：顶栏下面一条今日进度，底部是五个入口的导航" />
-          <figcaption>
-            手机上换成底部导航，平板上收成一条图标竖栏，计时数字随屏幕宽度缩放，不会顶出圆环。
-          </figcaption>
-        </figure>
-      </section>
-
-      <section class="release" id="release">
-        <h2>更新记录</h2>
-        <p class="release__version" id="release-version">正在读取最新版本…</p>
-        <div class="release__notes" id="release-notes"></div>
-        <p class="release__fallback">
-          每个版本的完整说明和校验文件都在
-          <a href="https://github.com/Soulmte/qingdeng/releases">发布页</a>。
-        </p>
       </section>
     </main>
 

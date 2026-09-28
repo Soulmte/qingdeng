@@ -44,6 +44,19 @@ SHEETS = {
     "dialogs": ["phone:dialog", "desktop:dialog"],
 }
 
+# 下载页要用的单张图：同一份演示数据、同一个主题（暗色，和应用的默认观感一致），
+# 按设备尺寸各截一张，互不拼接。
+SINGLES = {
+    "timer": ("desktop", "timer"),
+    "tasks": ("desktop", "tasks"),
+    "stats": ("desktop", "stats"),
+    "phone-timer": ("phone", "timer"),
+    "phone-stats": ("phone", "stats"),
+}
+
+# 单张图按暗色截，sheet 按亮色截（亮色更适合看清导航形态）
+SINGLE_THEME = "dark"
+
 FRAME = """<!doctype html>
 <html><head><meta charset="utf-8"><title>{name}</title>
 <style>html,body{{margin:0;padding:0;overflow:hidden;background:#fff}}
@@ -122,10 +135,54 @@ def build_sheet(name: str, items: list[str]) -> tuple[list, int, int]:
     return placed, width, tallest
 
 
+def shoot_singles() -> None:
+    """按设备尺寸各截一张完整图，供下载页使用。"""
+    OUT.mkdir(exist_ok=True)
+    for name, (device, page) in SINGLES.items():
+        w, h, touch = DEVICES[device]
+        wrapper = ROOT / f"single-{name}.html"
+        wrapper.write_text(
+            FRAME.format(
+                name=name,
+                frames=(
+                    f'<iframe style="left:0;top:0" width="{w}" height="{h}" '
+                    f'src="index.html?page={page}&touch={1 if touch else 0}&theme={SINGLE_THEME}"></iframe>'
+                ),
+            ),
+            encoding="utf-8",
+        )
+        canvas = OUT / f"single-{name}.png"
+        subprocess.run(
+            [
+                EDGE,
+                "--headless=new",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                "--force-device-scale-factor=1",
+                f"--window-size={max(w, 600)},{h}",
+                f"--virtual-time-budget={BUDGET_MS}",
+                f"--screenshot={canvas}",
+                wrapper.as_uri(),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        Image.open(canvas).crop((0, 0, w, h)).save(canvas)
+        print(f"  {canvas.name} {w}x{h}（{device} / {page}）")
+
+
 def main() -> None:
-    wanted = sys.argv[1:] or list(SHEETS)
+    want_singles = "--singles" in sys.argv
+    wanted = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
     OUT.mkdir(exist_ok=True)
     build_probe()
+
+    if want_singles or not wanted:
+        print("下载页用的单张图：")
+        shoot_singles()
+
+    if not wanted:
+        return
 
     for name in wanted:
         placed, width, height = build_sheet(name, SHEETS[name])

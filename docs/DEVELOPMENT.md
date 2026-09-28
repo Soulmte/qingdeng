@@ -157,6 +157,7 @@ powershell -ExecutionPolicy Bypass -File scripts\capture-window.ps1
 python scripts/device-preview/shots.py              # 手机 / 平板 / 桌面几张对照图
 python scripts/device-preview/shots.py phone-pages  # 只截其中一组
 python scripts/device-preview/site-shots.py         # 下载页（长页分段截）
+python scripts/device-preview/site-assets.py        # 重生下载页与 README 里的手机截图
 ```
 
 两个坑它都已经绕过了：
@@ -165,6 +166,11 @@ python scripts/device-preview/site-shots.py         # 下载页（长页分段�
 2. **zustand 在 SSR 下读的是初始状态**（`useSyncExternalStore` 的服务端快照取 `getInitialState`），所以 `renderToStaticMarkup` 出来的页面永远是空数据。脚本改成在浏览器里挂载，并用一个假数据库（`scripts/device-preview/tauri-stub.ts` 里的 `select` 按 SQL 文本返回演示数据）喂进真实结构的数据。
 
 产物在 `scripts/device-preview/out/`，中间文件都已 gitignore。
+
+下载页那几张图要成套（同一份演示数据与主题），散着更新会变得风格不一致，
+所以取图与裁切都收在 `site-assets.py` 里：整页图直接写进 `site/img/`，
+三张细节特写是从整图上裁出来的（表盘、任务进度条、柱状图），
+手机那张同时写一份到 `docs/images/phone.png` 供 README 使用。
 
 ### 平台能力差异
 
