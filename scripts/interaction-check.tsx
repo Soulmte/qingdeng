@@ -239,6 +239,7 @@ async function main() {
         currentVersion: "0.1.0",
         notes: "# 青灯 v0.2.1\n\n## 改进\n\n- 修复轮次编辑后无法保存\n- 新增启动时检查更新",
         date: "2026-09-28T09:00:00Z",
+        size: null,
       },
     });
   });
@@ -272,11 +273,11 @@ async function main() {
     `小节=${headings.join("/")} 井号=${dialogText.includes("#")}`,
   );
 
-  // 更新说明长短不一，面板得比默认的 max-w-md 宽一档，长句才不会挤成窄柱
+  // 更新说明长短不一，面板宽度从默认的 max-w-md 起，够用又不至于占满屏幕
   const dialogPanel = scope.querySelector('[role="dialog"]');
   record(
-    "更新弹窗面板覆盖默认宽度到 max-w-2xl",
-    Boolean(dialogPanel?.className.includes("max-w-2xl")) &&
+    "更新弹窗面板保持窄版宽度",
+    Boolean(dialogPanel?.className.includes("max-w-md")) &&
       Boolean(dialogPanel?.className.includes("dialog-sheet")) &&
       Boolean(dialogPanel?.className.includes("rounded-t-2xl")),
     `面板类=${dialogPanel?.className ?? "未找到"}`,
@@ -395,6 +396,20 @@ async function main() {
       immersiveText.includes("还有128天") &&
       !immersiveText.includes("出发去旅行"),
     `考研=${immersiveText.includes("还有128天")} 未标记的不显示=${!immersiveText.includes("出发去旅行")}`,
+  );
+
+  // 宽屏时钟居中、两侧富余，倒计时收到右侧栏；窄屏没有这块空白，还是跟随时钟
+  const rail = Array.from(scope.querySelectorAll<HTMLElement>("div")).find(
+    (node) => node.className.includes("xl:flex") && node.textContent?.includes("考研"),
+  );
+  record(
+    "宽屏倒计时收进右侧栏，窄屏跟随时钟",
+    Boolean(rail?.className.includes("absolute")) &&
+      Boolean(rail?.className.includes("right-8")) &&
+      Array.from(scope.querySelectorAll<HTMLElement>("div")).some(
+        (node) => node.className.includes("xl:hidden") && node.textContent?.includes("考研"),
+      ),
+    `右栏=${Boolean(rail)}`,
   );
 
   await act(async () => {

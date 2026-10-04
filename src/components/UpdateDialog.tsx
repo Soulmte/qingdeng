@@ -26,10 +26,10 @@ export function UpdateDialog() {
   const busy = phase === "downloading" || phase === "installing";
   const notes = parseNotes(info.notes);
 
-  // 只有拿到总长度才是确定进度；拿不到就让进度条自己跑，别假装知道百分比
+  // 有总大小就是真实百分比，拿不到才退化成不确定态；
+  // 清单里带了安装包大小，下载一开始就是确定进度，不会先跑一段假的动画
   const determinate = phase !== "downloading" || percent !== null;
-  const progressValue =
-    phase === "downloading" ? (percent ?? 0) : phase === "installing" ? 100 : 0;
+  const progressValue = phase === "installing" ? 100 : (percent ?? 0);
 
   const progressLabel =
     phase === "downloading"
@@ -43,7 +43,7 @@ export function UpdateDialog() {
       open={open}
       // 下载过程中不允许关掉，避免状态和实际安装对不上
       onClose={busy ? () => undefined : close}
-      className="max-w-2xl"
+      className="max-w-md"
       title={`发现新版本 ${info.version}`}
       description={`当前版本 ${info.currentVersion}${
         info.date ? ` · 发布于 ${info.date.slice(0, 10)}` : ""
@@ -80,7 +80,7 @@ export function UpdateDialog() {
         {notes.length === 0 ? (
           <p className="text-sm text-muted">这次更新没有附说明。</p>
         ) : (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex max-h-[42dvh] flex-col gap-1.5 overflow-y-auto pr-1">
             {notes.map((line, index) =>
               line.heading ? (
                 <h4
@@ -112,7 +112,7 @@ export function UpdateDialog() {
         <section className="flex flex-col gap-3 rounded-field bg-default p-4">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm text-foreground">{progressLabel}</span>
-            {phase === "downloading" && percent !== null ? (
+            {percent !== null ? (
               <span className="clock-digits text-sm font-semibold text-accent">{percent}%</span>
             ) : null}
           </div>
@@ -120,6 +120,7 @@ export function UpdateDialog() {
           <ProgressBar
             aria-label={progressLabel}
             color="accent"
+            size="lg"
             value={determinate ? progressValue : undefined}
             isIndeterminate={!determinate}
           >

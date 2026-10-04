@@ -18,6 +18,8 @@ export interface UpdateInfo {
   notes: string;
   /** 发布日期，清单没给时为 null */
   date: string | null;
+  /** 安装包字节数，清单没给时为 null；用来让进度条落在真实百分比上 */
+  size: number | null;
 }
 
 export type DownloadProgress = {
@@ -33,6 +35,22 @@ export interface PendingUpdate {
   install: (onProgress?: (progress: DownloadProgress) => void) => Promise<void>;
 }
 
+/**
+ * 从 CDN 清单里读安装包大小。
+ *
+ * 发布时把 size 写进 platforms 的每一项；updater 只认 url 与 signature，
+ * 多出来的键会被忽略，所以这份大小不影响签名校验，只给界面算真实百分比。
+ */
+function readManifestSize(rawJson: unknown): number | null {
+  const platforms = (rawJson as { platforms?: Record<string, { size?: unknown }> } | null)
+    ?.platforms;
+  if (!platforms) return null;
+  for (const entry of Object.values(platforms)) {
+    if (typeof entry?.size === "number" && entry.size > 0) return entry.size;
+  }
+  return null;
+}
+
 /** 拉取 CDN 清单并比对版本；没有新版本、平台不支持或网络不通都返回 null */
 export async function checkForUpdate(): Promise<PendingUpdate | null> {
   if (!supportsAutoUpdate()) return null;
@@ -41,22 +59,30 @@ export async function checkForUpdate(): Promise<PendingUpdate | null> {
   const update = await check();
   if (!update) return null;
 
+  const info: UpdateInfo = {
+    version: update.version,
+    currentVersion: update.currentVersion,
+    notes: update.body ?? "",
+    date: update.date ?? null,
+    size: readManifestSize(update.rawJson),
+  };
+
   return {
-    info: {
-      version: update.version,
-      currentVersion: update.currentVersion,
-      notes: update.body ?? "",
-      date: update.date ?? null,
-    },
+    info,
     install: async (onProgress) => {
       let downloaded = 0;
-      let total: number | null = null;
+      // 先用清单里的大小兜底：即便 CDN 不返回 Content-Length，
+      // 进度条也能一上来就是真实百分比，而不是来回跑的不确定态
+      let total: number | null = info.size;
 
       await update.downloadAndInstall((event) => {
         if (event.event === "Started") {
-          total = event.data.contentLength ?? null;
+          total = event.data.contentLength ?? info.size;
         } else if (event.event === "Progress") {
           downloaded += event.data.chunkLength;
+        } else if (event.event === "Finished" && total !== null) {
+          // 收尾对齐到总大小，避免最后一个分块没对上导致停在 99%
+          downloaded = total;
         }
         onProgress?.({ downloaded, total });
       });

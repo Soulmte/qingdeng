@@ -141,6 +141,9 @@ const manifest = {
     "windows-x86_64": {
       signature: readFileSync(join(nsisDir, `${updater}.sig`), "utf8").trim(),
       url: `${assetBase}/${encodePath(assetName)}`,
+      // 安装包字节数。updater 只认 url 与 signature，多出来的键会被忽略，
+      // 客户端读它来让下载进度条落在真实百分比上（CDN 不返回 Content-Length 时尤有用）。
+      size: statSync(join(nsisDir, updater)).size,
     },
   },
 };

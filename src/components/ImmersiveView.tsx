@@ -9,7 +9,7 @@ import { countdownParts, formatRemaining } from "@/lib/countdown";
 import { formatDateLabel, formatTimeOfDay } from "@/lib/time";
 import { isTouchPrimary } from "@/lib/platform";
 import { cn } from "@/lib/utils";
-import type { TimerStatus } from "@/lib/types";
+import type { CountdownRecord, TimerStatus } from "@/lib/types";
 import { useCountdownStore } from "@/stores/countdownStore";
 import { useImmersiveStore } from "@/stores/immersiveStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -23,6 +23,52 @@ const STATUS_HINTS: Record<TimerStatus, string> = {
   paused: "已暂停，随时继续",
   finished: "这一段已经完成",
 };
+
+/**
+ * 沉浸界面里的一条倒计时。
+ * inline 用在与时钟同一列（窄屏），stacked 用在右侧栏（宽屏），对齐方式不同。
+ */
+function PinnedCountdown({
+  item,
+  now,
+  layout,
+}: {
+  item: CountdownRecord;
+  now: Date;
+  layout: "inline" | "stacked";
+}) {
+  const parts = countdownParts(item.targetAt, now);
+
+  if (layout === "inline") {
+    return (
+      <span className="flex items-baseline gap-2">
+        <span className="text-sm text-muted">{item.title}</span>
+        <span
+          className={cn(
+            "clock-digits text-base font-semibold sm:text-lg",
+            parts.past ? "text-muted" : "text-foreground",
+          )}
+        >
+          {formatRemaining(parts)}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-0.5 text-right">
+      <span className="text-sm text-muted">{item.title}</span>
+      <span
+        className={cn(
+          "clock-digits text-2xl font-semibold",
+          parts.past ? "text-muted" : "text-foreground",
+        )}
+      >
+        {formatRemaining(parts)}
+      </span>
+    </div>
+  );
+}
 
 /** 沉浸模式：自动全屏、隐藏干扰信息，顶部始终显示当前时间 */
 export function ImmersiveView() {
@@ -99,7 +145,7 @@ export function ImmersiveView() {
         </div>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-5 sm:gap-8 sm:px-10">
+      <main className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-5 sm:gap-8 sm:px-10">
         <ClockFaceView face={clockFace} size="lg" {...clock} />
         {taskName ? (
           <p className="max-w-[520px] truncate text-base text-muted sm:text-lg">{taskName}</p>
@@ -108,24 +154,20 @@ export function ImmersiveView() {
         )}
 
         {pinned.length > 0 ? (
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            {pinned.map((item) => {
-              const parts = countdownParts(item.targetAt, now);
-              return (
-                <span key={item.id} className="flex items-baseline gap-2">
-                  <span className="text-sm text-muted">{item.title}</span>
-                  <span
-                    className={cn(
-                      "clock-digits text-base font-semibold sm:text-lg",
-                      parts.past ? "text-muted" : "text-foreground",
-                    )}
-                  >
-                    {formatRemaining(parts)}
-                  </span>
-                </span>
-              );
-            })}
-          </div>
+          <>
+            {/* 窄屏没有富余的横向空间，倒计时跟在时钟下方 */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 xl:hidden">
+              {pinned.map((item) => (
+                <PinnedCountdown key={item.id} item={item} now={now} layout="inline" />
+              ))}
+            </div>
+            {/* 宽屏时钟居中、两侧留白很多，倒计时安静地落在右栏 */}
+            <div className="pointer-events-none absolute inset-y-0 right-8 hidden flex-col items-end justify-center gap-5 xl:flex xl:right-10">
+              {pinned.map((item) => (
+                <PinnedCountdown key={item.id} item={item} now={now} layout="stacked" />
+              ))}
+            </div>
+          </>
         ) : null}
       </main>
 

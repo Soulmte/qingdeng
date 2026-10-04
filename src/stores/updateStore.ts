@@ -14,9 +14,9 @@ interface UpdateStore {
   info: UpdateInfo | null;
   open: boolean;
   phase: InstallPhase;
-  /** 下载百分比；服务端没给总大小时为 null，界面退化成不确定进度 */
+  /** 下载百分比；清单与响应都没给总大小时为 null，界面退化成不确定进度 */
   percent: number | null;
-  /** 已下载字节数与总字节数，用来在界面上显示真实数字 */
+  /** 已下载字节数与总字节数（优先取清单里带的大小），用来算真实进度 */
   downloaded: number;
   total: number | null;
   /** 下载速度（字节/秒），两次采样算出并做平滑 */
@@ -102,11 +102,14 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
   install: async () => {
     if (!pending) return;
 
+    // 清单里带了安装包大小，下载一开始进度条就是真实百分比
+    const knownTotal = pending.info.size;
+
     set({
       phase: "downloading",
-      percent: null,
+      percent: knownTotal !== null ? 0 : null,
       downloaded: 0,
-      total: null,
+      total: knownTotal,
       speed: 0,
       message: null,
     });
