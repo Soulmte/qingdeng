@@ -108,7 +108,7 @@ export default function CountdownsPage() {
 
       {ordered.length > 0 ? (
         <p className="text-xs text-muted">
-          时刻精确到分钟。把时刻设成 23:59，这一天整天都算「还没到」。
+          天数按日历天算，每天零点翻页；到了目标这一天，会精确到还剩几小时几分。
         </p>
       ) : null}
 

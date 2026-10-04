@@ -45,40 +45,41 @@ export const SEED_TASKS = [
 ];
 
 /** 日期倒计时：偏移天数算成具体时刻，截图里的天数才稳定 */
-function atDayOffset(offset: number, hour: number) {
+function atDayOffset(offset: number, hour: number, minute = 0) {
   const date = new Date();
   date.setDate(date.getDate() + offset);
-  date.setHours(hour, 0, 0, 0);
+  date.setHours(hour, minute, 0, 0);
   return date.toISOString();
 }
 
 export const SEED_COUNTDOWNS = [
-  // 目标是「那天 00:00」，所以往后再移一天，显示出来才是整数天
+  // 今天到点：展示「还有几小时几分」那一档
   {
     id: 1,
-    title: "考研",
-    target_at: atDayOffset(129, 0),
+    title: "交作业",
+    target_at: atDayOffset(0, 18, 0),
     show_in_immersive: 1,
-    created_at: atDayOffset(-30, 9),
+    created_at: atDayOffset(-3, 9),
   },
   {
     id: 2,
     title: "期末周",
-    target_at: atDayOffset(31, 8),
-    show_in_immersive: 1,
+    target_at: atDayOffset(31, 8, 0),
+    show_in_immersive: 0,
     created_at: atDayOffset(-20, 9),
   },
+  // 时刻取当天 23:59，也就是「整天都算还没到」，天数就是偏移量
   {
     id: 3,
-    title: "出发去旅行",
-    target_at: atDayOffset(10, 6),
-    show_in_immersive: 0,
-    created_at: atDayOffset(-12, 9),
+    title: "考研",
+    target_at: atDayOffset(128, 23, 59),
+    show_in_immersive: 1,
+    created_at: atDayOffset(-30, 9),
   },
   {
     id: 4,
     title: "生日",
-    target_at: atDayOffset(-5, 0),
+    target_at: atDayOffset(-5, 23, 59),
     show_in_immersive: 0,
     created_at: atDayOffset(-40, 9),
   },

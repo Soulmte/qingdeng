@@ -157,12 +157,15 @@ const countdownEditorHtml = renderToStaticMarkup(
 );
 
 // 倒计时的时间计算全是纯函数，直接验算：
-// 目标 2026-12-26 00:00，站在 2026-11-20 09:30 看
+// 目标 2026-12-26，站在 2026-11-20 09:30 看，中间隔 36 个零点
 const cdFuture = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 10, 20, 9, 30));
-// 站在目标前 5 小时 20 分看
-const cdImminent = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 11, 25, 18, 40));
+// 目标当天看：2026-12-26 08:30，站在 03:10 看，还差 5 小时 20 分
+const cdImminent = countdownParts(new Date(2026, 11, 26, 8, 30), new Date(2026, 11, 26, 3, 10));
 // 站在目标后 3 天看
 const cdPast = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 11, 29, 1, 0));
+// 同一个日子里换时间点，天数应保持不变（零点才翻页）
+const cdSameMorning = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 10, 20, 0, 5));
+const cdSameNight = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 10, 20, 23, 55));
 
 const csv = sessionsToCsv([
   {
@@ -610,16 +613,19 @@ const checks: [string, boolean, string][] = [
     `可见标签 ${count(shellHtml, ">倒计时<")} 处，图标栏 ${count(shellHtml, 'aria-label="倒计时"')} 处`,
   ],
   [
-    "倒计时的剩余时间按天 / 小时 / 分钟逐级取整",
-    cdFuture.days === 35 &&
-      cdFuture.hours === 14 &&
-      cdFuture.minutes === 30 &&
-      !cdFuture.past &&
-      formatRemaining(cdFuture) === "还有 35 天",
-    `${cdFuture.days} 天 ${cdFuture.hours} 小时 ${cdFuture.minutes} 分 / ${formatRemaining(cdFuture)}`,
+    "倒计时的天数按日历天算，零点才翻页",
+    cdFuture.days === 36 && !cdFuture.past && formatRemaining(cdFuture) === "还有 36 天",
+    `${cdFuture.days} 天 / ${formatRemaining(cdFuture)}`,
   ],
   [
-    "不足一天时换成小时与分钟",
+    "同一天里换时间点，天数不变",
+    cdSameMorning.days === 36 &&
+      cdSameNight.days === 36 &&
+      cdSameMorning.days === cdSameNight.days,
+    `00:05 → ${cdSameMorning.days} 天，23:55 → ${cdSameNight.days} 天`,
+  ],
+  [
+    "到了目标这一天改成报小时与分钟",
     cdImminent.days === 0 &&
       primaryUnit(cdImminent).unit === "小时" &&
       primaryUnit(cdImminent).value === 5 &&
@@ -662,9 +668,9 @@ const checks: [string, boolean, string][] = [
     "倒计时编辑器用原生日期与时刻输入",
     countdownEditorHtml.includes('type="date"') &&
       countdownEditorHtml.includes('type="time"') &&
-      // 新建默认停在明天 00:00
+      // 新建默认停在明天 23:59，整天都算还没到
       countdownEditorHtml.includes('value="2026-12-27"') &&
-      countdownEditorHtml.includes('value="00:00"'),
+      countdownEditorHtml.includes('value="23:59"'),
     `默认日期=${/value="(\d{4}-\d{2}-\d{2})"/.exec(countdownEditorHtml)?.[1]}`,
   ],
   [

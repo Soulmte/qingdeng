@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Button, Input } from "@heroui/react";
 import { Dialog } from "@/components/ui/Dialog";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
-import { defaultTargetDate, formatTimeInput, fromDateTimeInput } from "@/lib/countdown";
+import {
+  DEFAULT_TARGET_TIME,
+  defaultTargetDate,
+  formatTimeInput,
+  fromDateTimeInput,
+} from "@/lib/countdown";
 import { toDateKey } from "@/lib/time";
 import type { CountdownDraft, CountdownRecord } from "@/lib/types";
 
@@ -26,7 +31,12 @@ interface FormState {
 
 function draftOf(countdown: CountdownRecord | null, now: Date): FormState {
   if (!countdown) {
-    return { title: "", date: defaultTargetDate(now), time: "00:00", showInImmersive: true };
+    return {
+      title: "",
+      date: defaultTargetDate(now),
+      time: DEFAULT_TARGET_TIME,
+      showInImmersive: true,
+    };
   }
   const target = new Date(countdown.targetAt);
   return {
@@ -129,7 +139,7 @@ export function CountdownEditorDialog({
       </div>
 
       <p className="text-xs text-muted">
-        倒计时走到这一天的这个时刻为止，精确到分钟。想让整天都算「还没到」，把时刻设成 23:59 即可。
+        天数按日历天算，每天零点翻页。时刻决定这一天里从什么时候算「到了」，默认到当天结束。
       </p>
 
       <div className="flex items-center justify-between gap-4 rounded-field bg-default px-3.5 py-3">

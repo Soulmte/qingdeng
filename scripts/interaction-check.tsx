@@ -365,7 +365,8 @@ async function main() {
       {
         id: 1,
         title: "考研",
-        targetAt: inDays(129, 0),
+        // 时刻取当天 23:59，天数就等于偏移的日历天数
+        targetAt: inDays(128, 23),
         showInImmersive: true,
         createdAt: inDays(-10, 9),
       },

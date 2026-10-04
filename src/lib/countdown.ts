@@ -4,23 +4,31 @@ const MINUTE = 60_000;
 const HOUR = 60;
 const DAY = 24 * HOUR;
 
-/** 剩余时间拆成天 / 小时 / 分钟，全部向下取整 */
+/** 剩余时间拆成天 / 小时 / 分钟 */
 export interface CountdownParts {
   /** 目标时刻已经过去了 */
   past: boolean;
+  /** 日历天：今天到目标日期中间隔几个零点，每天零点减一 */
   days: number;
+  /** 小时与分钟：到了目标这一天才会用到，精确到这一天的时刻 */
   hours: number;
   minutes: number;
 }
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
+const startOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
 /**
- * 距离某个时刻还有多久。
+ * 距离某个日子还有多久。
  *
- * 向下取整：写「还有 128 天」时那 128 天是完整的，剩多少小时另说。
- * 目标时刻是「到达那一刻」，所以给考试日设成当天 00:00 的话，
- * 前一天晚上就会显示「还有 1 小时」，而不是「还有 1 天」。
+ * 天用**日历天**：中间隔几个零点就是几天。这样「还有 128 天」一整天都是 128，
+ * 到零点才减一；如果按两个时刻的差值去算，目标设成 08:30 的话，
+ * 每天的 08:30 数字就跳一次，同一个日子里下午和晚上会显示不同的天数。
+ *
+ * 小时与分钟只在目标这一天用：到了那一天，改成报还剩几小时几分。
+ * 目标时刻本身仍然精确到分钟，决定的是这一天里从什么时候算「到了」。
  */
 export function countdownParts(targetAt: string | Date, now: Date): CountdownParts {
   const target = targetAt instanceof Date ? targetAt : new Date(targetAt);
@@ -29,11 +37,13 @@ export function countdownParts(targetAt: string | Date, now: Date): CountdownPar
     return { past: false, days: 0, hours: 0, minutes: 0 };
   }
 
+  const days = Math.round((startOfDay(target) - startOfDay(now)) / 86_400_000);
   const diff = targetMs - now.getTime();
   const total = Math.floor(Math.abs(diff) / MINUTE);
+
   return {
     past: diff < 0,
-    days: Math.floor(total / DAY),
+    days: Math.abs(days),
     hours: Math.floor((total % DAY) / HOUR),
     minutes: total % 60,
   };
@@ -41,7 +51,7 @@ export function countdownParts(targetAt: string | Date, now: Date): CountdownPar
 
 /**
  * 一句话说清剩余时间，用在放不下大数字的地方（沉浸模式、提醒文字）。
- * 一天以上只报到天，一天以内报到分钟，与卡片上那个大数字保持一致。
+ * 一天以上只报到天，到了那一天报到分钟，与卡片上那个大数字同一套口径。
  */
 export function formatRemaining(parts: CountdownParts) {
   const head = parts.past ? "已过去" : "还有";
@@ -102,10 +112,13 @@ export function fromDateTimeInput(dateValue: string, timeValue: string): string 
   return value.toISOString();
 }
 
-/** 新建时默认停在下一天的 00:00 */
+/** 新建时默认停在下一天的 23:59，也就是「整天都算还没到」 */
 export function defaultTargetDate(now: Date) {
   const next = new Date(now);
   next.setDate(next.getDate() + 1);
   next.setHours(0, 0, 0, 0);
   return toDateKey(next);
 }
+
+/** 与默认日期配套的默认时刻 */
+export const DEFAULT_TARGET_TIME = "23:59";
