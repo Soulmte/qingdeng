@@ -1,12 +1,13 @@
 {
-  "version": "0.3.0",
-  "notes": "# 青灯 v0.3.0\r\n\r\n这一版的重点在安卓：平板不再是一套缩小版的后台管理界面，手机也能正常用了。\r\n\r\n## 新增\r\n\r\n- 日期倒计时：写下考研、出发这类日子，随时看还剩多少天。天数按日历天算、每天零点翻页，到目标当天再精确到还剩几小时几分；每条都能单独选择是否在沉浸界面一并显示\r\n- 手机适配：底部导航、单手够得着的控制条、统计记录改成卡片列表\r\n- 下载页 https://soulmte.github.io/qingdeng/ ，打开会自动填上最新版号和下载地址\r\n\r\n## 改进\r\n\r\n- 平板上的导航收成左侧一条图标竖栏。此前横屏平板（普遍 1280px 以上）会被当成宽屏桌面，直接出现 224px 的侧边栏，整页看上去像一套后台系统\r\n- 计时页的标题栏与控制条按屏幕宽度重排：手机上模板与任务按钮平分一行，开始按钮单独一行，重置与跳过收成图标\r\n- 设置页在手机上改成上下排列，控件单独一行，按钮占满宽度\r\n- 弹窗在手机上贴底展开，长内容可以滚动\r\n- 三种时钟的字号改按容器宽度缩放，手机横竖屏切换都不会顶出圆环\r\n- 统计页的柱状图在手机上给了最小高度，此前柱子与纵轴标签会挤成一团\r\n\r\n## 保持不变\r\n\r\n- 记录格式、模板、任务与导出方式都与 0.2.1 一致，覆盖安装不会丢数据\r\n- 桌面端的布局没有变化（导航多了一个倒计时入口）\r\n\r\n## 已知问题\r\n\r\n- 数据还不能导入，换设备可以先用「导出完整备份」留档\r\n- Android 版不支持应用内更新，需要下载安装包覆盖安装",
-  "pub_date": "2026-10-04T02:22:24.336Z",
+  "version": "0.3.1",
+  "notes": "# 青灯 v0.3.1\r\n\r\n这一版把倒计时挪回它该在的地方，更新时也能看到真实的下载进度。\r\n\r\n## 改进\r\n\r\n- 沉浸界面里，倒计时在宽屏上移到时钟右侧的空白区，安静地待在一边，不再和控制条挤在一起；手机上仍在时钟下方\r\n- 更新弹窗收窄一档，更新说明过长时会在弹窗内滚动，不再撑满整个屏幕\r\n- 下载进度条加粗，百分比数字常驻显示\r\n\r\n## 修复\r\n\r\n- 更新进度条现在只反映真实字节：安装包大小写进了更新清单，下载一开始就是真实百分比，结束精确停在 100%，不再出现来回跑的进度条\r\n\r\n## 保持不变\r\n\r\n- 记录格式、模板、任务与导出方式都与 0.3.0 一致，覆盖安装不会丢数据",
+  "pub_date": "2026-10-04T02:50:15.864Z",
   "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ2RTE3QjVCRTRBMEYwMTIKUldRUzhLRGtXM3ZoUm1MWVR5ZnI1ZjFtVXpSTS9nUXUxcWtXR29uUkRGdEUzSFNMV1hWcnJ5bFEK",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUzhLRGtXM3ZoUnNRSGJVb2hYZVVaZHhIOW9raEdPY20wTkRadmwyT2Jnem5jY1praEFNWWRjQ29TYVJyS1ByQlhJdTNhc2owUUZRR2ZIVW12V2RiVHlqbFhVSW5DNFE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDgwNTQzCWZpbGU66Z2S54GvXzAuMy4wX3g2NC1zZXR1cC5uc2lzLnppcAl2ZXJzaW9uOjAuMy4wCkdPRUx6VmhXWC9ha0dSRXlkaUhqZmx3bUd4MEN4aEZLVktob0FMN013aThrVjJIYUVZbmphaVZwVzlKSGhUYms5THNLbUpxeDE0RnY1K2JRSHc2TkJBPT0K",
-      "url": "https://cdn.jsdelivr.net/gh/Soulmte/qingdeng@cdn/QingDeng_0.3.0_x64-setup.nsis.zip"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUzhLRGtXM3ZoUm9zdVNxbzNveWdmaVpGa3BVM0w1WkxzamJVSTJuK2tXSFBvNjJFSXZkb2xiQ2hBdHVZbFF0UG94bi8zL2RzUVFFOTlSbG1GcHV4TG1kRk9OQUlIMVE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxMDgyMjE1CWZpbGU66Z2S54GvXzAuMy4xX3g2NC1zZXR1cC5uc2lzLnppcAl2ZXJzaW9uOjAuMy4xClphWnpwcXFlREVlRlUwSXZZdHNMWFBrNkJrTVlMK0hpUHhLS2laMG9Vc1JpNjZieG5JZ0huR09zeWNOM0ZNeFFNVUo3TTFsaXVQeWVvNGdoWjI0eENnPT0K",
+      "url": "https://cdn.jsdelivr.net/gh/Soulmte/qingdeng@cdn/QingDeng_0.3.1_x64-setup.nsis.zip",
+      "size": 3391643
     }
   }
 }
