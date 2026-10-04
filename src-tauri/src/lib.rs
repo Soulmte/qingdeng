@@ -62,13 +62,32 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 ";
 
+/// 第二版：日期倒计时。存「到某天某刻还有多久」，与专注计时互不干涉。
+const CREATE_COUNTDOWNS: &str = "
+CREATE TABLE IF NOT EXISTS countdowns (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    title              TEXT    NOT NULL,
+    target_at          TEXT    NOT NULL,
+    show_in_immersive  INTEGER NOT NULL DEFAULT 1,
+    created_at         TEXT    NOT NULL
+);
+";
+
 fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create_qingdeng_schema",
-        sql: CREATE_SCHEMA,
-        kind: MigrationKind::Up,
-    }]
+    vec![
+        Migration {
+            version: 1,
+            description: "create_qingdeng_schema",
+            sql: CREATE_SCHEMA,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_countdowns",
+            sql: CREATE_COUNTDOWNS,
+            kind: MigrationKind::Up,
+        },
+    ]
 }
 
 /// 由前端在计时开始 / 结束时调用，避免长时间专注时屏幕自动熄灭

@@ -6,11 +6,13 @@ import { AppShell } from "@/components/layout/AppShell";
 import { useDesktopSync } from "@/hooks/useDesktopSync";
 import { useTimerHotkeys } from "@/hooks/useTimerHotkeys";
 import { findPreset, mergePresets } from "@/lib/presets";
+import { useCountdownStore } from "@/stores/countdownStore";
 import { usePresetStore } from "@/stores/presetStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { useUpdateStore } from "@/stores/updateStore";
+import CountdownsPage from "@/views/CountdownsPage";
 import ModesPage from "@/views/ModesPage";
 import SettingsPage from "@/views/SettingsPage";
 import StatsPage from "@/views/StatsPage";
@@ -21,6 +23,7 @@ export default function App() {
   const hydrateSettings = useSettingsStore((state) => state.hydrate);
   const refreshPresets = usePresetStore((state) => state.refresh);
   const refreshTasks = useTaskStore((state) => state.refresh);
+  const refreshCountdowns = useCountdownStore((state) => state.refresh);
   const settingsReady = useSettingsStore((state) => state.ready);
   const presetsReady = usePresetStore((state) => state.ready);
   const tasksReady = useTaskStore((state) => state.ready);
@@ -34,8 +37,9 @@ export default function App() {
     void hydrateSettings();
     void refreshPresets();
     void refreshTasks();
+    void refreshCountdowns();
     void loadVersion();
-  }, [hydrateSettings, refreshPresets, refreshTasks, loadVersion]);
+  }, [hydrateSettings, refreshPresets, refreshTasks, refreshCountdowns, loadVersion]);
 
   // 设置读完之后再查更新，这样才知道用户忽略过哪个版本；失败不打扰用户
   useEffect(() => {
@@ -63,6 +67,7 @@ export default function App() {
       <AppShell>
         <Routes>
           <Route path="/" element={<TimerPage />} />
+          <Route path="/countdowns" element={<CountdownsPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/modes" element={<ModesPage />} />
           <Route path="/stats" element={<StatsPage />} />

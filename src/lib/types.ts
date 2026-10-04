@@ -63,3 +63,19 @@ export interface TaskRecord {
   /** 已完成的专注段数，由 sessions 聚合得出 */
   doneRounds: number;
 }
+
+/**
+ * 日期倒计时：到某天某刻还有多久。
+ * 与专注计时完全独立，一条就是一个日子（考研、答辩、旅行……）。
+ */
+export interface CountdownRecord {
+  id: number;
+  title: string;
+  /** 目标时刻，ISO 时间戳；时刻精确到分钟 */
+  targetAt: string;
+  /** 是否在沉浸模式里一并显示 */
+  showInImmersive: boolean;
+  createdAt: string;
+}
+
+export type CountdownDraft = Pick<CountdownRecord, "title" | "targetAt" | "showInImmersive">;

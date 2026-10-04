@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { BarChart3, LayoutGrid, Settings, Target, Timer } from "lucide-react";
+import { BarChart3, CalendarClock, LayoutGrid, Settings, Target, Timer } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { TodaySummary } from "@/components/layout/TodaySummary";
@@ -12,6 +12,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 
 const NAV_ITEMS = [
   { to: "/", label: "计时", icon: Timer },
+  { to: "/countdowns", label: "倒计时", icon: CalendarClock },
   { to: "/tasks", label: "任务", icon: Target },
   { to: "/modes", label: "模式", icon: LayoutGrid },
   { to: "/stats", label: "统计", icon: BarChart3 },
@@ -24,6 +25,8 @@ const NAV_ITEMS = [
  *            <768px        768px 以上
  *   触屏     底栏          图标栏
  *   鼠标     底栏          图标栏（≥1024px 换成完整侧边栏）
+ *
+ * 六个入口在手机底栏上每格约 65px，图标加两个字的标签正好放得下。
  *
  * 关键一条：触屏设备永远不用 224px 的桌面侧边栏。安卓平板横屏普遍在 1280px 以上，
  * 只看宽度会直接落到桌面布局，整页看上去就变成了一套后台管理系统。

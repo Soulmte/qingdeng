@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Button, Card, Switch } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 import {
   AlignLeft,
   BellRing,
@@ -17,6 +17,7 @@ import { clearSessions, countSessions } from "@/db/client";
 import { Dialog } from "@/components/ui/Dialog";
 import { NumberStepper } from "@/components/ui/NumberStepper";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 import { applyFocusAssist, openSystemSettings } from "@/lib/desktop";
 import { exportBackup, exportSessionsCsv } from "@/lib/exporter";
 import { GOAL_MAX, GOAL_MIN, GOAL_STEP } from "@/lib/presetEditor";
@@ -65,26 +66,6 @@ function SettingRow({
       </div>
       <div className="sm:shrink-0">{children}</div>
     </div>
-  );
-}
-
-function ToggleSwitch({
-  label,
-  isSelected,
-  onChange,
-}: {
-  label: string;
-  isSelected: boolean;
-  onChange: (isSelected: boolean) => void;
-}) {
-  return (
-    <Switch aria-label={label} isSelected={isSelected} onChange={onChange}>
-      <Switch.Content>
-        <Switch.Control>
-          <Switch.Thumb />
-        </Switch.Control>
-      </Switch.Content>
-    </Switch>
   );
 }
 

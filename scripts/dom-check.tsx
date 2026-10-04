@@ -16,6 +16,7 @@ import { MemoryRouter } from "react-router-dom";
 import { Legend, LegendItem, LegendLabel, LegendMarker, LegendValue } from "@/components/charts";
 import { AppShell } from "@/components/layout/AppShell";
 import { RingClock } from "@/components/clock/RingClock";
+import { CountdownEditorDialog } from "@/components/countdown/CountdownEditorDialog";
 import { PresetEditorDialog } from "@/components/timer/PresetEditorDialog";
 import { TaskPickerDialog } from "@/components/timer/TaskPickerDialog";
 import { TemplateDialog } from "@/components/timer/TemplateDialog";
@@ -29,6 +30,13 @@ import {
   supportsWindowControls,
 } from "@/lib/platform";
 import { buildDailySeries } from "@/lib/stats";
+import {
+  countdownParts,
+  formatRemaining,
+  formatTargetAt,
+  fromDateTimeInput,
+  primaryUnit,
+} from "@/lib/countdown";
 import { formatDurationLabel } from "@/lib/time";
 import { parseNotes } from "@/lib/updater";
 import type { SessionRecord } from "@/lib/types";
@@ -37,6 +45,7 @@ import SettingsPage from "@/views/SettingsPage";
 import StatsPage from "@/views/StatsPage";
 import TasksPage from "@/views/TasksPage";
 import TimerPage from "@/views/TimerPage";
+import CountdownsPage from "@/views/CountdownsPage";
 
 const LONG_PRESET = {
   id: 0,
@@ -133,6 +142,27 @@ const shellHtml = renderToStaticMarkup(
 const statsHtml = renderToStaticMarkup(<StatsPage />);
 const tasksHtml = renderToStaticMarkup(<TasksPage />);
 const taskPickerHtml = renderToStaticMarkup(<TaskPickerDialog open onClose={() => undefined} />);
+const countdownsHtml = renderToStaticMarkup(<CountdownsPage />);
+
+// 倒计时编辑器：日期与时刻用原生输入，手机上能唤起系统选择器
+const COUNTDOWN_NOW = new Date(2026, 11, 26, 8, 30);
+const countdownEditorHtml = renderToStaticMarkup(
+  <CountdownEditorDialog
+    open
+    countdown={null}
+    now={COUNTDOWN_NOW}
+    onClose={() => undefined}
+    onSubmit={async () => undefined}
+  />,
+);
+
+// 倒计时的时间计算全是纯函数，直接验算：
+// 目标 2026-12-26 00:00，站在 2026-11-20 09:30 看
+const cdFuture = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 10, 20, 9, 30));
+// 站在目标前 5 小时 20 分看
+const cdImminent = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 11, 25, 18, 40));
+// 站在目标后 3 天看
+const cdPast = countdownParts(new Date(2026, 11, 26, 0, 0), new Date(2026, 11, 29, 1, 0));
 
 const csv = sessionsToCsv([
   {
@@ -489,7 +519,7 @@ const checks: [string, boolean, string][] = [
     // 图标栏里不能再出现竖排的文字标签，否则又变回「图标 + 文字」的宽栏
     railHtml.length > 0 &&
       !railHtml.includes("text-[0.7rem]") &&
-      count(railHtml, "<a ") === 5 &&
+      count(railHtml, "<a ") === 6 &&
       railHtml.includes('aria-label="任务"'),
     `图标栏链接=${count(railHtml, "<a ")} 含文字=${railHtml.includes("text-[0.7rem]")}`,
   ],
@@ -570,6 +600,77 @@ const checks: [string, boolean, string][] = [
     "时钟字号按容器比例，不依赖窗口宽度",
     shellCss.includes("container-type: inline-size") && shellCss.includes(".clock-box"),
     `clock-box=${shellCss.includes(".clock-box")}`,
+  ],
+  [
+    "导航含计时 / 倒计时 / 任务 / 模式 / 统计 / 设置六个入口",
+    // 侧边栏与底栏的标签是可见文字，图标栏只有 aria-label
+    shellHtml.includes('aria-label="倒计时"') &&
+      count(shellHtml, ">倒计时<") === 2 &&
+      count(shellHtml, 'aria-label="倒计时"') === 1,
+    `可见标签 ${count(shellHtml, ">倒计时<")} 处，图标栏 ${count(shellHtml, 'aria-label="倒计时"')} 处`,
+  ],
+  [
+    "倒计时的剩余时间按天 / 小时 / 分钟逐级取整",
+    cdFuture.days === 35 &&
+      cdFuture.hours === 14 &&
+      cdFuture.minutes === 30 &&
+      !cdFuture.past &&
+      formatRemaining(cdFuture) === "还有 35 天",
+    `${cdFuture.days} 天 ${cdFuture.hours} 小时 ${cdFuture.minutes} 分 / ${formatRemaining(cdFuture)}`,
+  ],
+  [
+    "不足一天时换成小时与分钟",
+    cdImminent.days === 0 &&
+      primaryUnit(cdImminent).unit === "小时" &&
+      primaryUnit(cdImminent).value === 5 &&
+      formatRemaining(cdImminent) === "还有 5 小时 20 分",
+    `${formatRemaining(cdImminent)}`,
+  ],
+  [
+    "过了目标时刻改说「已过去」",
+    cdPast.past &&
+      cdPast.days === 3 &&
+      primaryUnit(cdPast).unit === "天" &&
+      formatRemaining(cdPast) === "已过去 3 天",
+    `${formatRemaining(cdPast)}`,
+  ],
+  [
+    "日期 + 时刻按本地时间拼，不会整整差一天",
+    // new Date("2026-12-26") 会按 UTC 解析，东八区就变成前一天，这里必须自己拼
+    (() => {
+      const iso = fromDateTimeInput("2026-12-26", "08:30");
+      if (!iso) return false;
+      const back = new Date(iso);
+      return (
+        back.getFullYear() === 2026 &&
+        back.getMonth() === 11 &&
+        back.getDate() === 26 &&
+        back.getHours() === 8 &&
+        back.getMinutes() === 30
+      );
+    })(),
+    `目标时刻=${formatTargetAt(fromDateTimeInput("2026-12-26", "08:30") ?? "")}`,
+  ],
+  [
+    "不存在的日期会被挡下来",
+    fromDateTimeInput("2027-02-30", "09:00") === null &&
+      fromDateTimeInput("", "09:00") === null &&
+      fromDateTimeInput("2027-02-28", "25:00") === null,
+    `2月30日=${fromDateTimeInput("2027-02-30", "09:00")}`,
+  ],
+  [
+    "倒计时编辑器用原生日期与时刻输入",
+    countdownEditorHtml.includes('type="date"') &&
+      countdownEditorHtml.includes('type="time"') &&
+      // 新建默认停在明天 00:00
+      countdownEditorHtml.includes('value="2026-12-27"') &&
+      countdownEditorHtml.includes('value="00:00"'),
+    `默认日期=${/value="(\d{4}-\d{2}-\d{2})"/.exec(countdownEditorHtml)?.[1]}`,
+  ],
+  [
+    "倒计时页在没有条目时给出引导",
+    countdownsHtml.includes("倒计时") && countdownsHtml.includes("还没有倒计时"),
+    `含空态=${countdownsHtml.includes("还没有倒计时")}`,
   ],
   [
     "设置页不再出现毕业设计字样",

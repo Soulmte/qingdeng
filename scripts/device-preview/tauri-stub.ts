@@ -3,11 +3,12 @@
  * 返回 .devices/seed.ts 里的演示数据，于是各页面能带着真实结构的数据渲染出来。
  * 仅在本地截图核对时使用，不参与打包。
  */
-import { SEED_SETTINGS, SEED_TASKS, seedSessions } from "./seed";
+import { SEED_COUNTDOWNS, SEED_SETTINGS, SEED_TASKS, seedSessions } from "./seed";
 
 const sessions = seedSessions();
 const tasks = SEED_TASKS;
 const settings = SEED_SETTINGS;
+const countdowns = SEED_COUNTDOWNS;
 
 const select = async (sql: string, params?: unknown[]) => {
   const text = String(sql).replace(/\s+/g, " ");
@@ -33,6 +34,9 @@ const select = async (sql: string, params?: unknown[]) => {
     return [...tasks].sort((a, b) =>
       a.status === b.status ? b.id - a.id : a.status === "open" ? -1 : 1,
     );
+  }
+  if (text.includes("FROM countdowns")) {
+    return [...countdowns].sort((a, b) => (a.target_at < b.target_at ? -1 : 1));
   }
   if (text.includes("FROM presets")) {
     return [];

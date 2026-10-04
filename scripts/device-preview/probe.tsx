@@ -14,18 +14,22 @@
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
+import { ImmersiveView } from "@/components/ImmersiveView";
 import { TemplateDialog } from "@/components/timer/TemplateDialog";
 import { applyThemeClass } from "@/lib/theme";
+import { useCountdownStore } from "@/stores/countdownStore";
+import { useImmersiveStore } from "@/stores/immersiveStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { BUILTIN_PRESETS } from "@/lib/presets";
+import CountdownsPage from "@/views/CountdownsPage";
 import ModesPage from "@/views/ModesPage";
 import SettingsPage from "@/views/SettingsPage";
 import StatsPage from "@/views/StatsPage";
 import TasksPage from "@/views/TasksPage";
 import TimerPage from "@/views/TimerPage";
-import { SEED_SETTINGS, SEED_TASKS, seedSessions } from "./seed";
+import { SEED_COUNTDOWNS, SEED_SETTINGS, SEED_TASKS, seedSessions } from "./seed";
 
 const params = new URLSearchParams(location.search);
 const theme = params.get("theme") === "dark" ? "dark" : "light";
@@ -66,6 +70,19 @@ useTaskStore.setState({
   ready: true,
 });
 
+// 倒计时
+useCountdownStore.setState({
+  ...useCountdownStore.getState(),
+  countdowns: SEED_COUNTDOWNS.map((item) => ({
+    id: item.id,
+    title: item.title,
+    targetAt: item.target_at,
+    showInImmersive: item.show_in_immersive === 1,
+    createdAt: item.created_at,
+  })),
+  ready: true,
+});
+
 // 计时器：停在一个跑到一半的专注段，圆环上能看到进度弧与光点
 const classic = BUILTIN_PRESETS[0];
 useTimerStore.setState({
@@ -81,6 +98,7 @@ useTimerStore.setState({
 
 const PAGES = {
   timer: TimerPage,
+  countdowns: CountdownsPage,
   tasks: TasksPage,
   modes: ModesPage,
   stats: StatsPage,
@@ -90,6 +108,9 @@ const PAGES = {
 const key = params.get("page") ?? "timer";
 const Page = PAGES[key as keyof typeof PAGES] ?? TimerPage;
 
+// 沉浸模式是盖在整页上的，单独开一个页面来看它
+if (key === "immersive") useImmersiveStore.setState({ active: true });
+
 createRoot(document.getElementById("root") as HTMLElement).render(
   <MemoryRouter>
     <AppShell>
@@ -97,6 +118,7 @@ createRoot(document.getElementById("root") as HTMLElement).render(
     </AppShell>
     {/* 手机上弹层会变成贴底面版，单独看一眼 */}
     {key === "dialog" ? <TemplateDialog open onClose={() => undefined} /> : null}
+    {key === "immersive" ? <ImmersiveView /> : null}
   </MemoryRouter>,
 );
 

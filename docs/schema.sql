@@ -51,3 +51,13 @@ CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- 日期倒计时：到某天某刻还有多久，与专注计时完全独立
+-- target_at 是 ISO 8601 时间戳，时刻精确到分钟
+CREATE TABLE IF NOT EXISTS countdowns (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    title              TEXT    NOT NULL,
+    target_at          TEXT    NOT NULL,
+    show_in_immersive  INTEGER NOT NULL DEFAULT 1,  -- 1 则在沉浸模式里一并显示
+    created_at         TEXT    NOT NULL
+);

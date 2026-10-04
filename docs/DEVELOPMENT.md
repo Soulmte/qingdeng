@@ -157,7 +157,7 @@ powershell -ExecutionPolicy Bypass -File scripts\capture-window.ps1
 python scripts/device-preview/shots.py              # 手机 / 平板 / 桌面几张对照图
 python scripts/device-preview/shots.py phone-pages  # 只截其中一组
 python scripts/device-preview/site-shots.py         # 下载页（长页分段截）
-python scripts/device-preview/site-assets.py        # 重生下载页与 README 里的手机截图
+python scripts/device-preview/screenshots.py        # 重生 README 与下载页的全套截图
 ```
 
 两个坑它都已经绕过了：
@@ -168,9 +168,10 @@ python scripts/device-preview/site-assets.py        # 重生下载页与 README 
 产物在 `scripts/device-preview/out/`，中间文件都已 gitignore。
 
 下载页那几张图要成套（同一份演示数据与主题），散着更新会变得风格不一致，
-所以取图与裁切都收在 `site-assets.py` 里：整页图直接写进 `site/img/`，
-三张细节特写是从整图上裁出来的（表盘、任务进度条、柱状图），
-手机那张同时写一份到 `docs/images/phone.png` 供 README 使用。
+所以取图与裁切都收在 `screenshots.py` 里：
+
+- 桌面六个页面写进 `docs/images/`，README 直接引用；
+- 同一批里再写一份到 `site/img/`：整窗口、手机、以及从整图上裁出来的三张细节特写（表盘、任务进度条、柱状图）。
 
 ### 平台能力差异
 
@@ -513,6 +514,33 @@ Capability 也在 `src-tauri/capabilities/updater.json` 里用 `platforms` 限�
 
 注意 APK 不像 Windows 更新包那样有应用内签名校验（签名由 Android 系统在安装时把关，
 所以覆盖已装应用是安全的，但首次安装时请优先用 Release 里的那份）。
+
+## 日期倒计时
+
+与专注计时完全独立：一个在陪你度过这段时间，一个在替你看还有多久到那个日子。
+
+```
+countdowns
+├── title              # 名称，例如考研
+├── target_at          # ISO 时间戳，时刻精确到分钟
+├── show_in_immersive  # 是否在沉浸模式里一并显示
+└── created_at
+```
+
+表由第二个 Migration 建（`add_countdowns`），已有的库升级时只跑这一条。
+
+### 两个容易写错的地方
+
+1. **不能用 `new Date("2026-12-26")` 解析日期输入**。那个写法按 UTC 解析，东八区会变成前一天早上 8 点，倒计时整整差一天。`fromDateTimeInput()` 把日期与时刻拆成数字后按本地时间逐段构造，并校验没有溢出（2 月 30 日会被 `Date` 顺延到下个月，这里挡掉）。
+2. **`<input type="date">` 与 `<input type="time">` 用原生控件**。安卓上会直接唤起系统选择器，比自造日历对手机友好得多，也天然满足「精确到分钟」；样式用 `--field-*` 变量对齐 HeroUI 的输入框。
+
+### 显示约定
+
+- 剩余时间逐级向下取整：写「还有 128 天」时那 128 天是完整的。
+- 一天以上只报天数，一天以内报到小时与分钟，`formatRemaining()` 与卡片上那个大数字用同一套口径。
+- 目标时刻是「到达那一刻」，所以把考试日设成当天 00:00 的话，前一天晚上会显示「还有 1 小时」；想让整天都算没到，把时刻设成 23:59。
+- 已经过去的日子沉到列表最后并置灰（`opacity-60`），不自动删。
+- 沉浸模式里它们是安静的一行字，**不跟着控制栏一起淡出**：那是信息，不是控件。
 
 ## 下载页（GitHub Pages）
 

@@ -5,10 +5,12 @@ import { ClockFaceView } from "@/components/clock/ClockFaceView";
 import { TimerControls } from "@/components/timer/TimerControls";
 import { useClockView } from "@/hooks/useClockView";
 import { useNow } from "@/hooks/useNow";
+import { countdownParts, formatRemaining } from "@/lib/countdown";
 import { formatDateLabel, formatTimeOfDay } from "@/lib/time";
 import { isTouchPrimary } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import type { TimerStatus } from "@/lib/types";
+import { useCountdownStore } from "@/stores/countdownStore";
 import { useImmersiveStore } from "@/stores/immersiveStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
@@ -34,6 +36,11 @@ export function ImmersiveView() {
   const clock = useClockView();
   const now = useNow(1000);
   const [controlsVisible, setControlsVisible] = useState(true);
+
+  // 只显示标记过的那几条；沉浸模式里它们是安静的一条信息，不是控件，
+  // 所以不跟着控制栏一起淡出
+  const countdowns = useCountdownStore((state) => state.countdowns);
+  const pinned = countdowns.filter((item) => item.showInImmersive);
 
   useEffect(() => {
     if (!active) return;
@@ -99,6 +106,27 @@ export function ImmersiveView() {
         ) : (
           <p className="text-base text-muted sm:text-lg">{STATUS_HINTS[status]}</p>
         )}
+
+        {pinned.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {pinned.map((item) => {
+              const parts = countdownParts(item.targetAt, now);
+              return (
+                <span key={item.id} className="flex items-baseline gap-2">
+                  <span className="text-sm text-muted">{item.title}</span>
+                  <span
+                    className={cn(
+                      "clock-digits text-base font-semibold sm:text-lg",
+                      parts.past ? "text-muted" : "text-foreground",
+                    )}
+                  >
+                    {formatRemaining(parts)}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
       </main>
 
       <footer

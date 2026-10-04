@@ -8,13 +8,18 @@ import "./dom-setup";
 
 import { act } from "react";
 import { createRoot } from "react-dom/client";
+import { CountdownEditorDialog } from "@/components/countdown/CountdownEditorDialog";
+import { ImmersiveView } from "@/components/ImmersiveView";
 import { PresetEditorDialog } from "@/components/timer/PresetEditorDialog";
 import { UpdateDialog } from "@/components/UpdateDialog";
 import { BUILTIN_PRESETS } from "@/lib/presets";
 import { formatBytes } from "@/lib/updater";
+import { useCountdownStore } from "@/stores/countdownStore";
+import { useImmersiveStore } from "@/stores/immersiveStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTimerStore } from "@/stores/timerStore";
 import { useUpdateStore } from "@/stores/updateStore";
+import type { CountdownDraft } from "@/lib/types";
 import { executed } from "./stub-tauri";
 
 // 数据库写入走的是「在 Tauri 里才启用」的判定，这里把运行时标记补上
@@ -345,6 +350,114 @@ async function main() {
     useSettingsStore.getState().skippedUpdateVersion === "0.2.0" &&
       useUpdateStore.getState().open === false,
     `skipped=${useSettingsStore.getState().skippedUpdateVersion} open=${useUpdateStore.getState().open}`,
+  );
+
+  // ── 倒计时：沉浸模式里的展示，以及编辑器的落库内容 ──────────
+  const inDays = (days: number, hour: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    date.setHours(hour, 0, 0, 0);
+    return date.toISOString();
+  };
+
+  useCountdownStore.setState({
+    countdowns: [
+      {
+        id: 1,
+        title: "考研",
+        targetAt: inDays(129, 0),
+        showInImmersive: true,
+        createdAt: inDays(-10, 9),
+      },
+      {
+        id: 2,
+        title: "出发去旅行",
+        targetAt: inDays(10, 6),
+        showInImmersive: false,
+        createdAt: inDays(-10, 9),
+      },
+    ],
+    ready: true,
+  });
+
+  await act(async () => {
+    useImmersiveStore.setState({ active: true });
+  });
+  await act(async () => {
+    root.render(<ImmersiveView />);
+  });
+
+  const immersiveText = text().replace(/\s+/g, "");
+  record(
+    "沉浸模式只列出标记过的倒计时",
+    immersiveText.includes("考研") &&
+      immersiveText.includes("还有128天") &&
+      !immersiveText.includes("出发去旅行"),
+    `考研=${immersiveText.includes("还有128天")} 未标记的不显示=${!immersiveText.includes("出发去旅行")}`,
+  );
+
+  await act(async () => {
+    useImmersiveStore.setState({ active: false });
+  });
+
+  // 编辑器：填名称 + 选日期时刻，验证交给上层的 draft
+  let submitted: CountdownDraft | null = null;
+  await act(async () => {
+    root.render(
+      <CountdownEditorDialog
+        open
+        countdown={null}
+        now={new Date(2026, 11, 26, 8, 30)}
+        onClose={() => undefined}
+        onSubmit={async (draft) => {
+          submitted = draft;
+        }}
+      />,
+    );
+  });
+
+  const fields = Array.from(scope.querySelectorAll("input"));
+  const titleField = fields.find((field) => field.type === "text" || field.type === "");
+  const dateField = fields.find((field) => field.type === "date");
+  const timeField = fields.find((field) => field.type === "time");
+  record(
+    "倒计时编辑器给日期与时刻用原生输入",
+    Boolean(dateField) && Boolean(timeField) && dateField?.value === "2026-12-27",
+    `date=${dateField?.value} time=${timeField?.value}`,
+  );
+
+  const saveButton = findButton("保存") as HTMLButtonElement | undefined;
+  record(
+    "名称为空时不允许保存",
+    Boolean(saveButton?.disabled),
+    `保存按钮 disabled=${Boolean(saveButton?.disabled)}`,
+  );
+
+  if (titleField && dateField && timeField) {
+    await commitInput(titleField as HTMLInputElement, "考研");
+    await act(async () => {
+      setNativeValue(dateField as HTMLInputElement, "2027-02-10");
+      dateField.dispatchEvent(new window.Event("input", { bubbles: true }));
+      setNativeValue(timeField as HTMLInputElement, "08:30");
+      timeField.dispatchEvent(new window.Event("input", { bubbles: true }));
+    });
+    await press(findButton("保存"));
+  }
+
+  const submittedAt = submitted ? new Date(submitted.targetAt) : null;
+  record(
+    "保存时把日期与时刻按本地时间拼成目标时刻",
+    submitted !== null &&
+      submitted.title === "考研" &&
+      submitted.showInImmersive === true &&
+      submittedAt?.getFullYear() === 2027 &&
+      submittedAt?.getMonth() === 1 &&
+      submittedAt?.getDate() === 10 &&
+      submittedAt?.getHours() === 8 &&
+      submittedAt?.getMinutes() === 30,
+    submitted
+      ? `${submitted.title} ${submittedAt?.toLocaleString()} 沉浸=${submitted.showInImmersive}`
+      : "没有提交",
   );
 
   for (const [name, passed, detail] of checks) {

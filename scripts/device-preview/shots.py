@@ -37,7 +37,10 @@ DEVICES = {
 
 # 每个 sheet 是一排“设备:页面”组合，都按亮色主题截
 SHEETS = {
-    "phone-pages": ["phone:timer", "phone:tasks", "phone:stats", "phone:settings"],
+    "phone-pages": ["phone:timer", "phone:countdowns", "phone:tasks", "phone:stats"],
+    "phone-more": ["phone:settings"],
+    "countdowns": ["desktop:countdowns", "phone:countdowns"],
+    "immersive": ["desktop:immersive", "phone:immersive"],
     "phone-other": ["phone-land:timer", "tablet:timer"],
     "tablet": ["tab-land:timer", "tab-land:stats"],
     "desktop": ["desktop:timer", "desktop:settings"],
@@ -47,10 +50,16 @@ SHEETS = {
 # 下载页要用的单张图：同一份演示数据、同一个主题（暗色，和应用的默认观感一致），
 # 按设备尺寸各截一张，互不拼接。
 SINGLES = {
+    # 桌面：README 与下载页共用同一批
     "timer": ("desktop", "timer"),
+    "countdowns": ("desktop", "countdowns"),
     "tasks": ("desktop", "tasks"),
+    "modes": ("desktop", "modes"),
     "stats": ("desktop", "stats"),
+    "settings": ("desktop", "settings"),
+    # 手机
     "phone-timer": ("phone", "timer"),
+    "phone-countdowns": ("phone", "countdowns"),
     "phone-stats": ("phone", "stats"),
 }
 

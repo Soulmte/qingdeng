@@ -1,5 +1,13 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { PhaseKind, SessionRecord, TaskRecord, TimerKind, TimerPreset } from "@/lib/types";
+import type {
+  CountdownDraft,
+  CountdownRecord,
+  PhaseKind,
+  SessionRecord,
+  TaskRecord,
+  TimerKind,
+  TimerPreset,
+} from "@/lib/types";
 
 /** 与 src-tauri/src/lib.rs 里 add_migrations 的键、以及 tauri.conf.json 的 preload 保持一致 */
 export const DATABASE_URL = "sqlite:qingdeng.db";
@@ -280,6 +288,59 @@ export async function listPresets(): Promise<TimerPreset[]> {
 interface SettingRow {
   key: string;
   value: string;
+}
+
+interface CountdownRow {
+  id: number;
+  title: string;
+  target_at: string;
+  show_in_immersive: number;
+  created_at: string;
+}
+
+function toCountdownRecord(row: CountdownRow): CountdownRecord {
+  return {
+    id: row.id,
+    title: row.title,
+    targetAt: row.target_at,
+    showInImmersive: row.show_in_immersive === 1,
+    createdAt: row.created_at,
+  };
+}
+
+/** 按目标时刻由近到远排；已经过去的排到最后，它们不该占着视线 */
+export async function listCountdowns(): Promise<CountdownRecord[]> {
+  const db = await connect();
+  const rows = await db.select<CountdownRow[]>(
+    `SELECT id, title, target_at, show_in_immersive, created_at
+       FROM countdowns
+      ORDER BY target_at ASC`,
+  );
+  return rows.map(toCountdownRecord);
+}
+
+export async function insertCountdown(input: CountdownDraft) {
+  const db = await connect();
+  return db.execute(
+    `INSERT INTO countdowns (title, target_at, show_in_immersive, created_at)
+     VALUES ($1, $2, $3, $4)`,
+    [input.title, input.targetAt, input.showInImmersive ? 1 : 0, new Date().toISOString()],
+  );
+}
+
+export async function updateCountdown(id: number, input: CountdownDraft) {
+  const db = await connect();
+  return db.execute(
+    `UPDATE countdowns
+        SET title = $1, target_at = $2, show_in_immersive = $3
+      WHERE id = $4`,
+    [input.title, input.targetAt, input.showInImmersive ? 1 : 0, id],
+  );
+}
+
+export async function deleteCountdown(id: number) {
+  const db = await connect();
+  await db.execute("DELETE FROM countdowns WHERE id = $1", [id]);
 }
 
 export async function loadSettings(): Promise<Record<string, string>> {
